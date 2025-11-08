@@ -1,7 +1,11 @@
+import Sidebar from './components/Sidebar';
+import Home from '../src/pages/Home';
+
 export default function App() {
   return (
-    <h1 className="text-3xl font-bold underline">
-      Hello world!
-    </h1>
-  )
+    <div className="min-h-screen flex">
+      <Sidebar />
+      <Home />
+    </div>
+  );
 }
