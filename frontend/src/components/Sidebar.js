@@ -5,7 +5,7 @@ export default function Sidebar() {
         <div className="px-6 py-6 flex items-center gap-3">
           <div className="w-10 h-10 bg-white/20 rounded flex items-center justify-center font-semibold">SC</div>
           <div>
-            <div className="font-bold text-lg">Smart Cement for insee</div>
+            <div className="font-bold text-lg">Smart Cement</div>
             <div className="text-xs text-white/80">Research Platform</div>
           </div>
         </div>
