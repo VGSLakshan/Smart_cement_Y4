@@ -1,0 +1,77 @@
+# ========================================
+# SMART_CEMENT Backend Requirements
+# File: backend/requirements.txt
+# Updated: 2025-12-29
+# ========================================
+
+# ========================================
+# Web Framework
+# ========================================
+fastapi==0.104.1
+uvicorn[standard]==0.24.0
+python-multipart==0.0.6
+
+# ========================================
+# Machine Learning & Image Processing
+# ========================================
+tensorflow>=2.15.0
+numpy>=2.1.0
+pillow>=10.3.0
+opencv-python>=4.10.0
+xgboost>=2.0.0
+lightgbm>=4.0.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+
+# ========================================
+# Data Validation
+# ========================================
+pydantic==2.5.0
+pydantic-settings==2.1.0
+
+# ========================================
+# Configuration & Environment
+# ========================================
+python-dotenv==1.0.0
+
+# ========================================
+# Development & Testing
+# ========================================
+pytest==7.4.3
+pytest-asyncio==0.21.1
+httpx==0.25.2
+
+# ========================================
+# Optional: Additional Utilities
+# (Uncomment if needed)
+# ========================================
+# python-jose[cryptography]==3.3.0  # For JWT authentication
+# passlib[bcrypt]==1.7.4            # For password hashing
+# aiofiles==23.2.1                  # For async file operations
+# python-multipart==0.0.6           # Already included above
+
+# ========================================
+# Optional: Code Quality Tools
+# (Uncomment for development)
+# ========================================
+# black==23.11.0                    # Code formatting
+# flake8==6.1.0                     # Linting
+# isort==5.12.0                     # Import sorting
+# mypy==1.7.0                       # Type checking
+
+# ========================================
+# Optional: Performance & Monitoring
+# (Uncomment for production)
+# ========================================
+# gunicorn==21.2.0                  # Production WSGI server
+# python-jose==3.3.0                # JWT tokens
+# redis==5.0.1                      # Caching
+# celery==5.3.4                     # Task queue
+
+# ========================================
+# Notes:
+# - NumPy version constraint (<2.0) is CRITICAL for TensorFlow 2.18.0
+# - If you get NumPy errors, run: pip install "numpy<2.0" --force-reinstall
+# - For CPU-only TensorFlow (smaller size): pip install tensorflow-cpu==2.18.0
+# - For Apple Silicon (M1/M2): Use tensorflow-macos and tensorflow-metal
+# ========================================

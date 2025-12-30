@@ -1,4 +1,4 @@
-export default function Sidebar() {
+export default function Sidebar({ onNavigate, currentPage }) {
   return (
     <aside className="w-72 bg-red-600 text-white min-h-screen flex flex-col justify-between">
       <div>
@@ -11,10 +11,13 @@ export default function Sidebar() {
         </div>
 
         <nav className="mt-6 px-4 space-y-1">
-          <a className="flex items-center gap-3 px-4 py-3 rounded bg-white/10" href="#">
+          <button 
+            onClick={() => onNavigate && onNavigate('home')}
+            className={`flex items-center gap-3 px-4 py-3 rounded w-full text-left ${currentPage === 'home' ? 'bg-white/10' : 'hover:bg-white/5'}`}
+          >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 12l2-2m0 0l7-7 7 7M13 5v6h6"></path></svg>
             <span className="font-medium">Home</span>
-          </a>
+          </button>
           <a className="flex items-center gap-3 px-4 py-3 rounded hover:bg-white/5" href="#">
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 7h18M3 12h18M3 17h18"></path></svg>
             <span>Components</span>
