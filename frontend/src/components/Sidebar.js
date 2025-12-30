@@ -36,9 +36,9 @@ export default function Sidebar() {
 
       <div className="px-6 py-6">
         <div className="flex items-center gap-3 bg-white/10 rounded p-3">
-          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-red-600 font-semibold">AJ</div>
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center text-red-600 font-semibold">SL</div>
           <div>
-            <div className="text-sm font-medium">Alex Johnson</div>
+            <div className="text-sm font-medium">Sanchitha Lakshan</div>
             <div className="text-xs text-white/80">Researcher</div>
           </div>
         </div>

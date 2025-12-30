@@ -1,6 +1,10 @@
+import { useState } from 'react';
 import ResearchCard from '../components/ResearchCard';
+import CompressiveStrengthDetail from './CompressiveStrengthDetail';
 
 export default function Home() {
+  const [selectedCard, setSelectedCard] = useState(null);
+
   const cards = [
     {
       title: 'IoT-Based Cube Dimension Monitoring',
@@ -29,6 +33,20 @@ export default function Home() {
     },
   ];
 
+  const handleCardClick = (title) => {
+    if (title === 'Compressive Strength and Crack Detection') {
+      setSelectedCard(title);
+    }
+  };
+
+  const handleBack = () => {
+    setSelectedCard(null);
+  };
+
+  if (selectedCard === 'Compressive Strength and Crack Detection') {
+    return <CompressiveStrengthDetail onBack={handleBack} />;
+  }
+
   return (
     <main className="flex-1 p-10 bg-gray-50 min-h-screen">
       <div className="max-w-7xl mx-auto">
@@ -37,7 +55,12 @@ export default function Home() {
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           {cards.map((c) => (
-            <ResearchCard key={c.title} title={c.title} description={c.description} />
+            <ResearchCard 
+              key={c.title} 
+              title={c.title} 
+              description={c.description}
+              onClick={() => handleCardClick(c.title)}
+            />
           ))}
         </div>
       </div>

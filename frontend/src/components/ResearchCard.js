@@ -1,6 +1,6 @@
-export default function ResearchCard({ title, description }) {
+export default function ResearchCard({ title, description, onClick }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100">
+    <div className="bg-white rounded-lg shadow-sm p-6 border border-gray-100 hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer">
       <div className="flex items-start justify-between">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
@@ -12,7 +12,7 @@ export default function ResearchCard({ title, description }) {
       </div>
 
       <div className="mt-6">
-        <button className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700">Open</button>
+        <button onClick={onClick} className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">Open</button>
       </div>
     </div>
   );
