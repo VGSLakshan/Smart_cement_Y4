@@ -22,6 +22,11 @@ export default function Home() {
       description:
         'Review compressive strength test results and utilize AI-powered crack detection for detailed structural integrity analysis.',
     },
+    {
+      title: 'Cement Raw meals color particles identification',
+      description:
+        'Identify and analyze the color particles in cement raw meals to assess quality and consistency.',
+    },
   ];
 
   return (
