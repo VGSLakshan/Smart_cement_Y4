@@ -1,46 +1,39 @@
-import { useState } from 'react';
 import ResearchCard from '../components/ResearchCard';
-import CompressiveStrengthDetail from './CompressiveStrengthDetail';
 
-export default function Home() {
-  const [selectedCard, setSelectedCard] = useState(null);
-
+export default function Home({ onNavigate }) {
   const cards = [
     {
       title: 'IoT-Based Cube Dimension Monitoring',
       description:
         'Track the real-time dimensions of cement cubes throughout the curing process using IoT sensors for precise analysis.',
+      page: null
     },
-    {
-      title: 'Environmental and Curing Data Logger',
-      description:
-        'Log critical environmental data such as humidity and ambient temperature during the curing phase to ensure optimal conditions.',
-    },
+    
     {
       title: 'Material Mix Ratio and Temperature Analysis',
       description:
         'Analyze the relationship between material composition and the internal temperature of cement cubes for enhanced performance.',
+      page: null
     },
     {
       title: 'Compressive Strength and Crack Detection',
       description:
         'Review compressive strength test results and utilize AI-powered crack detection for detailed structural integrity analysis.',
+      page: 'compressive-strength'
+    },
+    {
+      title: 'Cement Strength Prediction (Multi-Output)',
+      description:
+        'Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using advanced ensemble machine learning models (XGBoost + LightGBM).',
+      page: 'cement-strength'
     },
   ];
 
-  const handleCardClick = (title) => {
-    if (title === 'Compressive Strength and Crack Detection') {
-      setSelectedCard(title);
+  const handleCardClick = (card) => {
+    if (card.page && onNavigate) {
+      onNavigate(card.page);
     }
   };
-
-  const handleBack = () => {
-    setSelectedCard(null);
-  };
-
-  if (selectedCard === 'Compressive Strength and Crack Detection') {
-    return <CompressiveStrengthDetail onBack={handleBack} />;
-  }
 
   return (
     <main className="flex-1 p-10 bg-gray-50 min-h-screen">
@@ -54,7 +47,7 @@ export default function Home() {
               key={c.title} 
               title={c.title} 
               description={c.description}
-              onClick={() => handleCardClick(c.title)}
+              onClick={() => handleCardClick(c)}
             />
           ))}
         </div>
