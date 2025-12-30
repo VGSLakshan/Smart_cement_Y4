@@ -1,28 +1,39 @@
 import ResearchCard from '../components/ResearchCard';
 
-export default function Home() {
+export default function Home({ onNavigate }) {
   const cards = [
     {
       title: 'IoT-Based Cube Dimension Monitoring',
       description:
         'Track the real-time dimensions of cement cubes throughout the curing process using IoT sensors for precise analysis.',
+      page: null
     },
-    {
-      title: 'Environmental and Curing Data Logger',
-      description:
-        'Log critical environmental data such as humidity and ambient temperature during the curing phase to ensure optimal conditions.',
-    },
+    
     {
       title: 'Material Mix Ratio and Temperature Analysis',
       description:
         'Analyze the relationship between material composition and the internal temperature of cement cubes for enhanced performance.',
+      page: null
     },
     {
       title: 'Compressive Strength and Crack Detection',
       description:
         'Review compressive strength test results and utilize AI-powered crack detection for detailed structural integrity analysis.',
+      page: 'compressive-strength'
+    },
+    {
+      title: 'Cement Strength Prediction (Multi-Output)',
+      description:
+        'Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using advanced ensemble machine learning models (XGBoost + LightGBM).',
+      page: 'cement-strength'
     },
   ];
+
+  const handleCardClick = (card) => {
+    if (card.page && onNavigate) {
+      onNavigate(card.page);
+    }
+  };
 
   return (
     <main className="flex-1 p-10 bg-gray-50 min-h-screen">
@@ -32,7 +43,12 @@ export default function Home() {
 
         <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
           {cards.map((c) => (
-            <ResearchCard key={c.title} title={c.title} description={c.description} />
+            <ResearchCard 
+              key={c.title} 
+              title={c.title} 
+              description={c.description}
+              onClick={() => handleCardClick(c)}
+            />
           ))}
         </div>
       </div>
