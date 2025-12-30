@@ -520,15 +520,15 @@ function CementStrengthPrediction() {
           padding: 0;
           width: 100%;
           margin: 0;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #f8d3d3ff 0%, #de5656ff 100%);
           min-height: 100vh;
           display: flex;
           flex-direction: column;
         }
 
         .header-section {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white;
+          background: linear-gradient(135deg, #f8d3d3ff 0%, #de5656ff 100%);
+          color: black;
           padding: 4rem 2rem 3rem;
           text-align: center;
           box-shadow: 0 4px 20px rgba(0,0,0,0.1);
@@ -554,7 +554,7 @@ function CementStrengthPrediction() {
           font-size: 2.8rem;
           margin-bottom: 0.8rem;
           font-weight: 700;
-          text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+          text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
           letter-spacing: -0.5px;
         }
 
@@ -637,7 +637,7 @@ function CementStrengthPrediction() {
         }
 
         .btn-load-sample {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           color: white;
           padding: 0.85rem 1.8rem;
           border: none;
@@ -649,12 +649,12 @@ function CementStrengthPrediction() {
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
         .btn-load-sample:hover {
           transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
         }
 
         .form-section-group {
@@ -723,9 +723,9 @@ function CementStrengthPrediction() {
 
         .form-group input:focus {
           outline: none;
-          border-color: #667eea;
+          border-color: #ef4444;
           background: white;
-          box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+          box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
           transform: translateY(-1px);
         }
 
@@ -756,14 +756,14 @@ function CementStrengthPrediction() {
         }
 
         .btn-primary {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           color: white;
-          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
         }
 
         .btn-primary:hover:not(:disabled) {
           transform: translateY(-3px);
-          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+          box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
         }
 
         .btn-primary:disabled {
@@ -882,11 +882,11 @@ function CementStrengthPrediction() {
         .badge-text {
           display: flex;
           flex-direction: column;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           color: white;
           padding: 0.8rem 1.5rem;
           border-radius: 10px;
-          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
         }
 
         .badge-label {
@@ -944,13 +944,13 @@ function CementStrengthPrediction() {
           left: 0;
           right: 0;
           height: 4px;
-          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
         }
 
         .result-card:hover {
           transform: translateY(-5px);
           box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-          border-color: #667eea;
+          border-color: #ef4444;
         }
 
         .result-card.highlight {
@@ -1006,7 +1006,7 @@ function CementStrengthPrediction() {
           color: #2d3748;
           line-height: 1;
           margin-bottom: 0.3rem;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -1044,7 +1044,7 @@ function CementStrengthPrediction() {
         }
 
         .info-card:hover {
-          border-color: #667eea;
+          border-color: #ef4444;
           background: white;
           transform: translateX(5px);
         }
@@ -1152,7 +1152,7 @@ function CementStrengthPrediction() {
 
         .progression-fill {
           height: 100%;
-          background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+          background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
           display: flex;
           align-items: center;
           justify-content: flex-end;
