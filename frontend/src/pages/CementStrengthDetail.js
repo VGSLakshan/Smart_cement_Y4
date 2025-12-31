@@ -117,7 +117,7 @@ function CementStrengthPrediction() {
     <div className="cement-strength-container">
       <div className="header-section">
         <div className="header-content">
-          <div className="header-icon">🏗️</div>
+          
           <h1>Cement Compressive Strength Predictor</h1>
           <p className="subtitle">Advanced Multi-Output Ensemble Model</p>
           <p className="description">
@@ -518,7 +518,7 @@ function CementStrengthPrediction() {
       <style jsx>{`
         .cement-strength-container {
           padding: 0;
-          width: 100%;
+          flex: 1;
           margin: 0;
           background: linear-gradient(135deg, #f8d3d3ff 0%, #de5656ff 100%);
           min-height: 100vh;
