@@ -3,8 +3,12 @@
 export default function CompressiveStrengthDetail({ onBack }) {
   const [showCamera, setShowCamera] = useState(false);
   const [capturedImage, setCapturedImage] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [crackResult, setCrackResult] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const startCamera = async () => {
     setShowCamera(true);
@@ -44,6 +48,65 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const retakePicture = () => {
     setCapturedImage(null);
     startCamera();
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setUploadedImage(e.target.result);
+        setCrackResult(null); // Reset previous results
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const analyzeCrack = async () => {
+    if (!uploadedImage) {
+      alert('Please upload an image first');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    setCrackResult(null);
+
+    try {
+      // Convert base64 to blob
+      const response = await fetch(uploadedImage);
+      const blob = await response.blob();
+      
+      // Create form data
+      const formData = new FormData();
+      formData.append('file', blob, 'crack_image.jpg');
+      formData.append('threshold', '0.5');
+
+      // Call the API
+      const apiResponse = await fetch('http://127.0.0.1:8000/api/sanchitha/predict', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error(`API error: ${apiResponse.status}`);
+      }
+
+      const result = await apiResponse.json();
+      setCrackResult(result);
+    } catch (error) {
+      console.error('Error analyzing crack:', error);
+      alert('Failed to analyze crack. Please make sure the backend server is running.');
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const clearUpload = () => {
+    setUploadedImage(null);
+    setCrackResult(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
@@ -124,6 +187,84 @@ export default function CompressiveStrengthDetail({ onBack }) {
                 <button onClick={startCamera} className="w-full bg-red-600 text-white px-4 py-3 rounded-md hover:bg-red-700 font-semibold">Identify Crack</button>
               </div>
             )}
+
+            {/* Upload Image Section */}
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Or Upload Image</h3>
+              
+              {uploadedImage ? (
+                <div>
+                  <img src={uploadedImage} alt="Uploaded" className="w-full rounded-lg h-64 object-cover mb-4" />
+                  
+                  {crackResult ? (
+                    <div className="space-y-4">
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h4 className="font-semibold text-blue-900 mb-2">Analysis Results</h4>
+                        <div className="space-y-2 text-sm">
+                          <p className={`font-bold ${crackResult.metrics.has_crack ? 'text-red-600' : 'text-green-600'}`}>
+                            {crackResult.message}
+                          </p>
+                          <p className="text-gray-700">Crack Coverage: <span className="font-semibold">{crackResult.metrics.crack_percentage}%</span></p>
+                          <p className="text-gray-700">Crack Pixels: <span className="font-semibold">{crackResult.metrics.crack_pixels.toLocaleString()}</span></p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <h4 className="font-semibold text-gray-900 mb-2">Segmentation Mask</h4>
+                        <img 
+                          src={`data:image/png;base64,${crackResult.mask_base64}`} 
+                          alt="Crack Mask" 
+                          className="w-full rounded-lg h-64 object-cover border-2 border-gray-300" 
+                        />
+                      </div>
+
+                      <button 
+                        onClick={clearUpload} 
+                        className="w-full bg-gray-600 text-white px-4 py-3 rounded-md hover:bg-gray-700 font-semibold"
+                      >
+                        Upload New Image
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <button 
+                        onClick={clearUpload} 
+                        className="flex-1 bg-gray-600 text-white px-4 py-3 rounded-md hover:bg-gray-700"
+                      >
+                        Clear
+                      </button>
+                      <button 
+                        onClick={analyzeCrack} 
+                        disabled={isAnalyzing}
+                        className="flex-1 bg-green-600 text-white px-4 py-3 rounded-md hover:bg-green-700 font-semibold disabled:bg-gray-400"
+                      >
+                        {isAnalyzing ? 'Analyzing...' : 'Analyze Crack'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileUpload}
+                    className="hidden"
+                    id="crack-upload"
+                  />
+                  <label
+                    htmlFor="crack-upload"
+                    className="w-full bg-blue-600 text-white px-4 py-3 rounded-md hover:bg-blue-700 font-semibold cursor-pointer flex items-center justify-center"
+                  >
+                    <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    Upload Image for Analysis
+                  </label>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <button onClick={onBack} className="mt-6 bg-gray-600 text-white px-6 py-2 rounded-md">Back</button>

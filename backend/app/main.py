@@ -8,6 +8,10 @@ import io
 
 # Import routers
 from app.routes.hirumi.hirumi import router as hirumi_router
+from app.routes.sanchitha.sanchitha import router as sanchitha_router
+
+# Import services
+from app.services.sanchitha.model_service import crack_service
 
 # ----------------------------
 # Logging Setup
@@ -44,6 +48,7 @@ app.add_middleware(
 # Include Routers
 # ----------------------------
 app.include_router(hirumi_router, prefix="/api")
+app.include_router(sanchitha_router, prefix="/api")
 
 # ----------------------------
 # Model Loading (Chamudini Model - Optional)
@@ -63,6 +68,7 @@ class_names = ["C2S", "C3A", "C3S", "C4AF"]
 @app.on_event("startup")
 async def load_model():
     global model
+    # Load Chamudini model
     if MODEL_PATH and os.path.exists(MODEL_PATH):
         try:
             # The fix: Add compile=False
@@ -72,6 +78,12 @@ async def load_model():
             logger.error(f"⚠️ Chamudini model failed to load: {str(e)}")
     else:
         logger.warning(f"⚠️ Chamudini model not found. Only Hirumi endpoints will be available.")
+    
+    # Load Sanchitha crack segmentation model
+    try:
+        crack_service.load_model()
+    except Exception as e:
+        logger.error(f"⚠️ Sanchitha model failed to load: {str(e)}")
 # ----------------------------
 # Endpoints
 # ----------------------------
