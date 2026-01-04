@@ -5,6 +5,10 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 import io
+from app.routes.kanchana.predict import router as kanchana_router
+
+
+
 
 # Import routers
 from app.routes.hirumi.hirumi import router as hirumi_router
@@ -33,6 +37,8 @@ app = FastAPI(
     redoc_url="/api/redoc"
 )
 
+
+app.include_router(kanchana_router)
 # ----------------------------
 # CORS Settings
 # ----------------------------

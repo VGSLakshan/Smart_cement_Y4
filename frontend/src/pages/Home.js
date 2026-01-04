@@ -27,6 +27,11 @@ export default function Home({ onNavigate }) {
         'Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using advanced ensemble machine learning models (XGBoost + LightGBM).',
       page: 'cement-strength'
     },
+    {
+      title: 'Cement Raw meals color particles identification',
+      description:
+        'Identify and analyze the color particles in cement raw meals to assess quality and consistency.',
+    },
   ];
 
   const handleCardClick = (card) => {

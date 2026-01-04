@@ -31,6 +31,9 @@ class Settings:
     # Chamudini's model paths
     CHAMUDINI_MODEL_PATH: Path = ML_MODELS_DIR / "chamudini" / "final_model.keras"
     CHAMUDINI_CLASS_NAMES_PATH: Path = ML_MODELS_DIR / "chamudini" / "class_names.json"
+
+    # Kanchana's model paths
+    KANCHANA_MODEL_PATH: Path = ML_MODELS_DIR / "kanchana" / "best.pt"
     
     # Image Processing
     IMAGE_SIZE: int = 224
@@ -57,4 +60,9 @@ class Settings:
         self.ML_MODELS_DIR.mkdir(parents=True, exist_ok=True)
         (self.ML_MODELS_DIR / "chamudini").mkdir(exist_ok=True)
 
+        (self.ML_MODELS_DIR / "kanchana").mkdir(exist_ok=True)
+
+
 settings = Settings()
+
+
