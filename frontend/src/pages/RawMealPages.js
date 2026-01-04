@@ -21,9 +21,9 @@ export default function RawMealPages() {
   };
 
   const handleDeletePrediction = (indexToDelete) => {
-    setPredictions((prev) =>
-      prev.filter((_, index) => index !== indexToDelete)
-    );
+    const updated = predictions.filter((_, index) => index !== indexToDelete);
+    setPredictions(updated);
+    localStorage.setItem("rawMealPredictions", JSON.stringify(updated));
   };
 
   return (

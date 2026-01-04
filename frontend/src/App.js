@@ -3,6 +3,7 @@ import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import CompressiveStrengthDetail from './pages/CompressiveStrengthDetail';
 import CementStrengthDetail from './pages/CementStrengthDetail';
+import RawMealPages from './pages/RawMealPages';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
@@ -15,6 +16,8 @@ export default function App() {
         return <CompressiveStrengthDetail />;
       case 'cement-strength':
         return <CementStrengthDetail />;
+      case 'raw-meal':
+        return <RawMealPages />;
       default:
         return <Home onNavigate={setCurrentPage} />;
     }
