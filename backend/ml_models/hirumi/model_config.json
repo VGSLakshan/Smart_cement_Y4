@@ -1,0 +1,120 @@
+{
+  "feature_columns": [
+    "Initial (min)",
+    "Final (min)",
+    "Residue 45\u00b5m(%)",
+    "Fineness(cm2/g)",
+    "L.O.I.",
+    "SiO2",
+    "Al2O3",
+    "Fe2O3",
+    "CaO",
+    "MgO",
+    "SO3",
+    "K20",
+    "Na2O",
+    "Cl",
+    "CaO_SiO2",
+    "CaO_Al2O3",
+    "SiO2_Al2O3",
+    "Fe2O3_Al2O3",
+    "CaO_Fe2O3",
+    "CaO_SiO2_ratio",
+    "Al2O3_Fe2O3_ratio",
+    "Fineness_Residue_ratio",
+    "CaO_Al2O3_ratio",
+    "SiO2_Fe2O3_ratio",
+    "Total_Oxides",
+    "Total_Alkalis",
+    "Total_Impurities",
+    "Grinding_Duration",
+    "Grinding_Intensity",
+    "CaO_squared",
+    "SiO2_squared",
+    "Fineness_squared",
+    "Al2O3_squared",
+    "CaO_cbrt",
+    "SiO2_cbrt",
+    "Fineness_cbrt",
+    "Fineness_log",
+    "CaO_log",
+    "CaO_Fineness",
+    "SiO2_Fineness"
+  ],
+  "target_columns": [
+    "1D",
+    "2D",
+    "7D",
+    "28D",
+    "56D"
+  ],
+  "ensemble_weights": {
+    "1D": {
+      "xgb": 0.5586735775500522,
+      "lgb": 0.4413264224499478
+    },
+    "2D": {
+      "xgb": 0.5001844080402561,
+      "lgb": 0.4998155919597439
+    },
+    "7D": {
+      "xgb": 0.49977673665407957,
+      "lgb": 0.5002232633459205
+    },
+    "28D": {
+      "xgb": 0.5014445986048989,
+      "lgb": 0.49855540139510107
+    },
+    "56D": {
+      "xgb": 0.5080400129216637,
+      "lgb": 0.4919599870783364
+    }
+  },
+  "performance_metrics": [
+    {
+      "Target": "1D",
+      "XGBoost_R\u00b2": 0.3099369381741336,
+      "XGBoost_RMSE": 2.545881415578784,
+      "LightGBM_R\u00b2": 0.24483592137884214,
+      "LightGBM_RMSE": 2.6632653703519114,
+      "Ensemble_R\u00b2": 0.2919807635778995,
+      "Ensemble_RMSE": 2.5787919692768275
+    },
+    {
+      "Target": "2D",
+      "XGBoost_R\u00b2": 0.9007856325202083,
+      "XGBoost_RMSE": 3.844009252258163,
+      "LightGBM_R\u00b2": 0.9001214290363982,
+      "LightGBM_RMSE": 3.8568548987931908,
+      "Ensemble_R\u00b2": 0.903078001301812,
+      "Ensemble_RMSE": 3.799341409207513
+    },
+    {
+      "Target": "7D",
+      "XGBoost_R\u00b2": 0.8806468455636923,
+      "XGBoost_RMSE": 6.221579286088666,
+      "LightGBM_R\u00b2": 0.8814336615432883,
+      "LightGBM_RMSE": 6.201038008864905,
+      "Ensemble_R\u00b2": 0.8863901142699877,
+      "Ensemble_RMSE": 6.070042763721121
+    },
+    {
+      "Target": "28D",
+      "XGBoost_R\u00b2": 0.8558200359423865,
+      "XGBoost_RMSE": 9.291812061116536,
+      "LightGBM_R\u00b2": 0.8508890169089518,
+      "LightGBM_RMSE": 9.449368319735012,
+      "Ensemble_R\u00b2": 0.8572829598792655,
+      "Ensemble_RMSE": 9.244552126801588
+    },
+    {
+      "Target": "56D",
+      "XGBoost_R\u00b2": 0.8360982612322778,
+      "XGBoost_RMSE": 11.94661904946367,
+      "LightGBM_R\u00b2": 0.8096348305846428,
+      "LightGBM_RMSE": 12.874992349724375,
+      "Ensemble_R\u00b2": 0.8293396311864335,
+      "Ensemble_RMSE": 12.190445431031112
+    }
+  ]
+}

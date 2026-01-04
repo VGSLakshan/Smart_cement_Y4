@@ -10,6 +10,13 @@ from app.routes.kanchana.predict import router as kanchana_router
 
 
 
+# Import routers
+from app.routes.hirumi.hirumi import router as hirumi_router
+from app.routes.sanchitha.sanchitha import router as sanchitha_router
+
+# Import services
+from app.services.sanchitha.model_service import crack_service
+
 # ----------------------------
 # Logging Setup
 # ----------------------------
@@ -44,9 +51,22 @@ app.add_middleware(
 )
 
 # ----------------------------
-# Model Loading
+# Include Routers
 # ----------------------------
-MODEL_PATH = r"C:\Users\Acer\Desktop\cement\backend\ml_models\chamudini\final_model.keras"
+app.include_router(hirumi_router, prefix="/api")
+app.include_router(sanchitha_router, prefix="/api")
+
+# ----------------------------
+# Model Loading (Chamudini Model - Optional)
+# ----------------------------
+import os
+from pathlib import Path
+
+# Try to find the chamudini model
+backend_dir = Path(__file__).parent.parent
+chamudini_model_path = backend_dir / "ml_models" / "chamudini" / "final_model.keras"
+
+MODEL_PATH = str(chamudini_model_path) if chamudini_model_path.exists() else None
 
 model = None
 class_names = ["C2S", "C3A", "C3S", "C4AF"]
@@ -54,12 +74,22 @@ class_names = ["C2S", "C3A", "C3S", "C4AF"]
 @app.on_event("startup")
 async def load_model():
     global model
+    # Load Chamudini model
+    if MODEL_PATH and os.path.exists(MODEL_PATH):
+        try:
+            # The fix: Add compile=False
+            model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+            logger.info(f"✅ Chamudini model loaded successfully from {MODEL_PATH}")
+        except Exception as e:
+            logger.error(f"⚠️ Chamudini model failed to load: {str(e)}")
+    else:
+        logger.warning(f"⚠️ Chamudini model not found. Only Hirumi endpoints will be available.")
+    
+    # Load Sanchitha crack segmentation model
     try:
-        # The fix: Add compile=False
-        model = tf.keras.models.load_model(MODEL_PATH, compile=False)
-        logger.info(f"✅ Model loaded successfully from {MODEL_PATH}")
+        crack_service.load_model()
     except Exception as e:
-        logger.error(f"❌ Failed to load model: {str(e)}")
+        logger.error(f"⚠️ Sanchitha model failed to load: {str(e)}")
 # ----------------------------
 # Endpoints
 # ----------------------------
