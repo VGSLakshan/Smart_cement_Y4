@@ -17,10 +17,10 @@ env/
 # ================================
 # Machine Learning Models & Data
 # ================================
-*.pt
-*.keras
-*.onnx
-*.h5
+# *.pt
+# *.keras
+# *.onnx
+# *.h5
 
 # YOLO / Training artifacts
 runs/
