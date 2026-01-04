@@ -1,0 +1,100 @@
+# ================================
+# Python
+# ================================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.log
+
+# ================================
+# Virtual Environments
+# ================================
+.venv/
+venv/
+env/
+
+# ================================
+# Machine Learning Models & Data
+# ================================
+*.pt
+*.keras
+*.onnx
+*.h5
+
+# YOLO / Training artifacts
+runs/
+wandb/
+datasets/
+
+# ================================
+# Uploaded & Generated Files
+# ================================
+backend/app/uploads/
+backend/uploads/
+*.jpg
+*.jpeg
+*.png
+*.bmp
+*.tif
+*.tiff
+
+# ================================
+# Environment & Secrets
+# ================================
+.env
+.env.*
+
+# ================================
+# IDE / Editor
+# ================================
+.vscode/
+.idea/
+
+# ================================
+# OS Files
+# ================================
+.DS_Store
+Thumbs.db
+
+# ================================
+# Logs & Temp
+# ================================
+logs/
+tmp/
+
+# ================================
+# Node / Frontend
+# ================================
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build / Bundler outputs
+frontend/build/
+build/
+dist/
+.next/
+.cache/
+.parcel-cache/
+.vite/
+
+# ================================
+# Python test & coverage
+# ================================
+.coverage
+htmlcov/
+.pytest_cache/
+
+# ================================
+# Misc
+# ================================
+# SQLite / DB files
+*.sqlite3
+*.db
+
+# pip wheel metadata
+pip-wheel-metadata/
+
