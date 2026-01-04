@@ -31,6 +31,7 @@ export default function Home({ onNavigate }) {
       title: 'Cement Raw meals color particles identification',
       description:
         'Identify and analyze the color particles in cement raw meals to assess quality and consistency.',
+      page: 'raw-meal'
     },
   ];
 
