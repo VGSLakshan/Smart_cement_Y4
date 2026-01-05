@@ -4,9 +4,25 @@ import Home from './pages/Home';
 import CompressiveStrengthDetail from './pages/CompressiveStrengthDetail';
 import CementStrengthDetail from './pages/CementStrengthDetail';
 import RawMealPages from './pages/RawMealPages';
+import Login from './pages/Login';
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState('home');
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLoginSuccess = () => {
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    setCurrentPage('home'); // Reset to home page on logout
+  };
+
+  // Show login page if not authenticated
+  if (!isAuthenticated) {
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
 
   const renderPage = () => {
     switch (currentPage) {
@@ -25,7 +41,7 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex">
-      <Sidebar onNavigate={setCurrentPage} currentPage={currentPage} />
+      <Sidebar onNavigate={setCurrentPage} currentPage={currentPage} onLogout={handleLogout} />
       {renderPage()}
     </div>
   );
