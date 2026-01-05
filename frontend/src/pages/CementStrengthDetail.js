@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { ClipboardList, FileEdit, Timer, Beaker, Rocket, RotateCcw, AlertTriangle, CheckCircle, BarChart3, TrendingUp, Award, Star, Bot, Target, Settings } from 'lucide-react';
 import '../App.css';
 
 function CementStrengthPrediction() {
@@ -123,10 +124,7 @@ function CementStrengthPrediction() {
           <p className="description">
             Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using state-of-the-art machine learning algorithms
           </p>
-          <div className="model-badges">
-            <span className="badge">XGBoost</span>
-            <span className="badge">LightGBM</span>
-          </div>
+          
         </div>
       </div>
 
@@ -135,18 +133,18 @@ function CementStrengthPrediction() {
           <div className="card">
             <div className="card-header">
               <div className="card-title">
-                <span className="title-icon">📋</span>
+                <span className="title-icon"><ClipboardList size={24} /></span>
                 <h2>Input Parameters</h2>
               </div>
               <button onClick={loadSampleData} className="btn-load-sample" type="button">
-                <span>📝</span> Load Sample Data
+                <FileEdit size={18} /> Load Sample Data
               </button>
             </div>
             
             <form onSubmit={handleSubmit}>
               <div className="form-section-group">
                 <div className="section-header">
-                  <h3><span className="section-icon">⏱️</span> Grinding Parameters</h3>
+                  <h3><span className="section-icon"><Timer size={20} /></span> Grinding Parameters</h3>
                   <p className="section-description">Physical properties and grinding specifications</p>
                 </div>
                 <div className="form-grid">
@@ -215,7 +213,7 @@ function CementStrengthPrediction() {
 
               <div className="form-section-group">
                 <div className="section-header">
-                  <h3><span className="section-icon">🧪</span> Chemical Composition</h3>
+                  <h3><span className="section-icon"><Beaker size={20} /></span> Chemical Composition</h3>
                   <p className="section-description">Oxide percentages in cement mixture</p>
                 </div>
                 <div className="form-grid">
@@ -339,13 +337,13 @@ function CementStrengthPrediction() {
                     </>
                   ) : (
                     <>
-                      <span>🚀</span>
+                      <Rocket size={18} />
                       <span>Predict Strength</span>
                     </>
                   )}
                 </button>
                 <button type="button" onClick={handleReset} className="btn-secondary" disabled={loading}>
-                  <span>🔄</span>
+                  <RotateCcw size={18} />
                   <span>Reset Form</span>
                 </button>
               </div>
@@ -356,7 +354,7 @@ function CementStrengthPrediction() {
         {error && (
           <div className="card error-card">
             <div className="error-content">
-              <div className="error-icon">⚠️</div>
+              <div className="error-icon"><AlertTriangle size={48} /></div>
               <div>
                 <h3>Prediction Error</h3>
                 <p>{error}</p>
@@ -370,7 +368,7 @@ function CementStrengthPrediction() {
           <div className="results-section" id="results-section">
             {showSuccess && (
               <div className="success-banner">
-                <span className="success-icon">✅</span>
+                <span className="success-icon"><CheckCircle size={24} /></span>
                 <span>Prediction completed successfully!</span>
               </div>
             )}
@@ -378,7 +376,7 @@ function CementStrengthPrediction() {
             <div className="card results-card">
               <div className="card-header">
                 <div className="card-title">
-                  <span className="title-icon">📊</span>
+                  <span className="title-icon"><BarChart3 size={24} /></span>
                   <h2>Prediction Results</h2>
                 </div>
                 <div className="model-badge-large">
@@ -396,7 +394,7 @@ function CementStrengthPrediction() {
               <div className="results-grid">
                 <div className="result-card strength-1d">
                   <div className="result-icon-wrapper">
-                    <div className="result-icon">📈</div>
+                    <div className="result-icon"><TrendingUp size={32} /></div>
                   </div>
                   <div className="result-content">
                     <div className="result-label">1-Day Strength</div>
@@ -407,7 +405,7 @@ function CementStrengthPrediction() {
 
                 <div className="result-card strength-2d">
                   <div className="result-icon-wrapper">
-                    <div className="result-icon">📈</div>
+                    <div className="result-icon"><TrendingUp size={32} /></div>
                   </div>
                   <div className="result-content">
                     <div className="result-label">2-Day Strength</div>
@@ -418,7 +416,7 @@ function CementStrengthPrediction() {
 
                 <div className="result-card strength-7d">
                   <div className="result-icon-wrapper">
-                    <div className="result-icon">📊</div>
+                    <div className="result-icon"><BarChart3 size={32} /></div>
                   </div>
                   <div className="result-content">
                     <div className="result-label">7-Day Strength</div>
@@ -430,7 +428,7 @@ function CementStrengthPrediction() {
                 <div className="result-card strength-28d highlight">
                   <div className="result-badge">Standard</div>
                   <div className="result-icon-wrapper">
-                    <div className="result-icon">⭐</div>
+                    <div className="result-icon"><Star size={32} /></div>
                   </div>
                   <div className="result-content">
                     <div className="result-label">28-Day Strength</div>
@@ -442,7 +440,7 @@ function CementStrengthPrediction() {
                 <div className="result-card strength-56d highlight">
                   <div className="result-badge">Long-term</div>
                   <div className="result-icon-wrapper">
-                    <div className="result-icon">🏆</div>
+                    <div className="result-icon"><Award size={32} /></div>
                   </div>
                   <div className="result-content">
                     <div className="result-label">56-Day Strength</div>
@@ -454,21 +452,21 @@ function CementStrengthPrediction() {
 
               <div className="model-info-grid">
                 <div className="info-card">
-                  <div className="info-icon">🤖</div>
+                  <div className="info-icon"><Bot size={28} /></div>
                   <div className="info-content">
                     <div className="info-label">Algorithm</div>
                     <div className="info-value">{prediction.predictions.model_used}</div>
                   </div>
                 </div>
                 <div className="info-card">
-                  <div className="info-icon">🎯</div>
+                  <div className="info-icon"><Target size={28} /></div>
                   <div className="info-content">
                     <div className="info-label">Confidence Level</div>
                     <div className="info-value">{prediction.predictions.confidence}</div>
                   </div>
                 </div>
                 <div className="info-card">
-                  <div className="info-icon">⚙️</div>
+                  <div className="info-icon"><Settings size={28} /></div>
                   <div className="info-content">
                     <div className="info-label">Features Used</div>
                     <div className="info-value">{prediction.engineered_features_count}</div>
@@ -477,7 +475,7 @@ function CementStrengthPrediction() {
               </div>
 
               <div className="strength-progression">
-                <h3><span className="chart-icon">📈</span> Strength Development Timeline</h3>
+                <h3><span className="chart-icon"><TrendingUp size={20} /></span> Strength Development Timeline</h3>
                 <div className="progression-chart">
                   {[
                     { day: '1D', value: prediction.predictions.strength_1d, label: '1 Day' },
@@ -520,14 +518,14 @@ function CementStrengthPrediction() {
           padding: 0;
           flex: 1;
           margin: 0;
-          background: linear-gradient(135deg, #f8d3d3ff 0%, #de5656ff 100%);
+          background: linear-gradient(135deg, #f4f1f1ff 0%, #f4f1f1ff 100%);
           min-height: 100vh;
           display: flex;
           flex-direction: column;
         }
 
         .header-section {
-          background: linear-gradient(135deg, #f8d3d3ff 0%, #de5656ff 100%);
+          background: linear-gradient(135deg, #f8d3d3ff 0%, #f8d3d3ff 100%);
           color: black;
           padding: 4rem 2rem 3rem;
           text-align: center;

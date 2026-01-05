@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Home from './pages/Home';
 import CompressiveStrengthDetail from './pages/CompressiveStrengthDetail';
@@ -40,9 +41,14 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex">
-      <Sidebar onNavigate={setCurrentPage} currentPage={currentPage} onLogout={handleLogout} />
-      {renderPage()}
+    <div className="min-h-screen flex flex-col">
+      <Navbar />
+      <div className="flex flex-1">
+        <Sidebar onNavigate={setCurrentPage} currentPage={currentPage} onLogout={handleLogout} />
+        <main className="flex-1 ml-72">
+          {renderPage()}
+        </main>
+      </div>
     </div>
   );
 }
