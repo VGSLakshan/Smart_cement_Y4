@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import Sidebar from './components/Sidebar';
-import Home from './pages/Home';
-import CompressiveStrengthDetail from './pages/CompressiveStrengthDetail';
-import CementStrengthDetail from './pages/CementStrengthDetail';
-import RawMealPages from './pages/RawMealPages';
-import Login from './pages/Login';
+import React, { useState } from "react";
+import Sidebar from "./components/Sidebar";
+import Home from "./pages/Home";
+import CompressiveStrengthDetail from "./pages/CompressiveStrengthDetail";
+import CementStrengthDetail from "./pages/CementStrengthDetail";
+import RawMealPages from "./pages/RawMealPages";
+import Login from "./pages/Login";
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState('home');
+  const [currentPage, setCurrentPage] = useState("home");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   const handleLoginSuccess = () => {
@@ -16,7 +16,7 @@ export default function App() {
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    setCurrentPage('home'); // Reset to home page on logout
+    setCurrentPage("home"); // Reset to home page on logout
   };
 
   // Show login page if not authenticated
@@ -26,13 +26,15 @@ export default function App() {
 
   const renderPage = () => {
     switch (currentPage) {
-      case 'home':
+      case "home":
         return <Home onNavigate={setCurrentPage} />;
-      case 'compressive-strength':
-        return <CompressiveStrengthDetail />;
-      case 'cement-strength':
+      case "compressive-strength":
+        return (
+          <CompressiveStrengthDetail onBack={() => setCurrentPage("home")} />
+        );
+      case "cement-strength":
         return <CementStrengthDetail />;
-      case 'raw-meal':
+      case "raw-meal":
         return <RawMealPages />;
       default:
         return <Home onNavigate={setCurrentPage} />;
@@ -41,7 +43,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex">
-      <Sidebar onNavigate={setCurrentPage} currentPage={currentPage} onLogout={handleLogout} />
+      <Sidebar
+        onNavigate={setCurrentPage}
+        currentPage={currentPage}
+        onLogout={handleLogout}
+      />
       {renderPage()}
     </div>
   );
