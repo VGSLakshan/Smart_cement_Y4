@@ -1,6 +1,6 @@
-﻿import { useState, useRef } from 'react';
-import ViewHistory from './ViewHistory';
-import { Camera, Upload, Calendar, RotateCw, X } from 'lucide-react';
+﻿import { useState, useRef } from "react";
+import ViewHistory from "./ViewHistory";
+import { Camera, Upload, Calendar, RotateCw, X } from "lucide-react";
 
 export default function CompressiveStrengthDetail({ onBack }) {
   const [showCamera, setShowCamera] = useState(false);
@@ -8,7 +8,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [crackResult, setCrackResult] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedDate, setSelectedDate] = useState("");
   const [showHistory, setShowHistory] = useState(false);
 
   const videoRef = useRef(null);
@@ -17,38 +17,40 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
   const getTodayDate = () => {
     const today = new Date();
-    return today.toISOString().split('T')[0];
+    return today.toISOString().split("T")[0];
   };
 
   const startCamera = async () => {
     setShowCamera(true);
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
       if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (err) {
-      console.error('Error accessing camera:', err);
-      alert('Unable to access camera. Please check permissions.');
+      console.error("Error accessing camera:", err);
+      alert("Unable to access camera. Please check permissions.");
     }
   };
 
   const captureImage = () => {
     if (videoRef.current && canvasRef.current) {
-      const context = canvasRef.current.getContext('2d');
+      const context = canvasRef.current.getContext("2d");
       canvasRef.current.width = videoRef.current.videoWidth;
       canvasRef.current.height = videoRef.current.videoHeight;
       context.drawImage(videoRef.current, 0, 0);
-      const imageData = canvasRef.current.toDataURL('image/jpeg', 0.9);
+      const imageData = canvasRef.current.toDataURL("image/jpeg", 0.9);
       setCapturedImage(imageData);
 
       const stream = videoRef.current.srcObject;
-      stream?.getTracks().forEach(track => track.stop());
+      stream?.getTracks().forEach((track) => track.stop());
       setShowCamera(false);
     }
   };
 
   const closeCamera = () => {
     if (videoRef.current?.srcObject) {
-      videoRef.current.srcObject.getTracks().forEach(track => track.stop());
+      videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
     }
     setShowCamera(false);
   };
@@ -72,7 +74,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
   const analyzeCrack = async () => {
     if (!uploadedImage && !capturedImage) {
-      alert('Please upload or capture an image first');
+      alert("Please upload or capture an image first");
       return;
     }
 
@@ -85,21 +87,26 @@ export default function CompressiveStrengthDetail({ onBack }) {
       const blob = await response.blob();
 
       const formData = new FormData();
-      formData.append('file', blob, 'crack_image.jpg');
-      formData.append('threshold', '0.5');
+      formData.append("file", blob, "crack_image.jpg");
+      formData.append("threshold", "0.5");
 
-      const apiResponse = await fetch('http://127.0.0.1:8000/api/sanchitha/predict', {
-        method: 'POST',
-        body: formData,
-      });
+      const apiResponse = await fetch(
+        "http://127.0.0.1:8000/api/sanchitha/predict",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!apiResponse.ok) throw new Error(`API error: ${apiResponse.status}`);
 
       const result = await apiResponse.json();
       setCrackResult(result);
     } catch (error) {
-      console.error('Error analyzing crack:', error);
-      alert('Failed to analyze crack. Please ensure the backend server is running.');
+      console.error("Error analyzing crack:", error);
+      alert(
+        "Failed to analyze crack. Please ensure the backend server is running."
+      );
     } finally {
       setIsAnalyzing(false);
     }
@@ -109,7 +116,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
     setUploadedImage(null);
     setCapturedImage(null);
     setCrackResult(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   if (showHistory) {
@@ -130,7 +137,12 @@ export default function CompressiveStrengthDetail({ onBack }) {
             </div>
             <div className="p-6">
               <div className="bg-black rounded-xl overflow-hidden mb-6">
-                <video ref={videoRef} autoPlay playsInline className="w-full aspect-video object-cover" />
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  playsInline
+                  className="w-full aspect-video object-cover"
+                />
                 <canvas ref={canvasRef} className="hidden" />
               </div>
               <div className="flex gap-4">
@@ -160,7 +172,8 @@ export default function CompressiveStrengthDetail({ onBack }) {
             Compressive Strength & Crack Detection
           </h1>
           <p className="text-gray-600 text-lg mb-8">
-            Real-time monitoring of concrete cube testing with AI-powered crack analysis
+            Real-time monitoring of concrete cube testing with AI-powered crack
+            analysis
           </p>
 
           <div className="flex flex-wrap gap-4">
@@ -182,48 +195,21 @@ export default function CompressiveStrengthDetail({ onBack }) {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left Column: Sensor Data */}
           <div className="space-y-8">
-            {/* Average Data Summary */}
-            <div className="bg-white rounded-2xl shadow-lg p-8 border-t-4 border-red-600">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Average Test Data</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-6">
-                <div className="bg-gray-50 rounded-xl p-5 text-center">
-                  <p className="text-sm text-gray-600">Avg. Length</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">150.12 mm</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-5 text-center">
-                  <p className="text-sm text-gray-600">Avg. Width</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">149.98 mm</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-5 text-center">
-                  <p className="text-sm text-gray-600">Avg. Area</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">229.98 mm²</p>
-                </div>
-                <div className="bg-red-50 rounded-xl p-5 text-center border border-red-200">
-                  <p className="text-sm text-gray-600">Compressive Strength</p>
-                  <p className="text-3xl font-bold text-red-600 mt-1">20.02 MPa</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-5 text-center">
-                  <p className="text-sm text-gray-600">Cube Grade</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">M20</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-5 text-center">
-                  <p className="text-sm text-gray-600">Curing Days</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">7</p>
-                </div>
-                <div className="bg-gray-50 rounded-xl p-5 text-center col-span-2 md:col-span-1">
-                  <p className="text-sm text-gray-600">Applied Load</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">450.75 kN</p>
-                </div>
-              </div>
-            </div>
-
             {/* All Sensor Sets */}
-            <div className="bg-white rounded-2xl shadow-lg p-5">
-              <h3 className="text-base font-bold text-gray-900 mb-3">Detailed Sensor Readings</h3>
+
+            <div className="bg-white rounded-2xl shadow-lg p-5 border-t-4 border-red-600">
+              <h3 className="text-base font-bold text-gray-900 mb-3">
+                Detailed Sensor Readings
+              </h3>
               <div className="space-y-3">
-                {['Set 1', 'Set 2', 'Set 3', 'Set 4'].map((set, index) => (
-                  <div key={index} className="border border-gray-200 rounded-xl p-3">
-                    <h4 className="text-sm text-gray-800 mb-2">{set} Sensor Data</h4>
+                {["Set 1", "Set 2", "Set 3", "Set 4"].map((set, index) => (
+                  <div
+                    key={index}
+                    className="border border-gray-200 rounded-xl p-3"
+                  >
+                    <h4 className="text-sm font-bold text-gray-800 mb-2">
+                      {set} Sensor Data
+                    </h4>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                       <div className="bg-gray-50 rounded-lg p-2 text-center">
                         <p className="text-xs text-gray-600">Length 1</p>
@@ -248,54 +234,129 @@ export default function CompressiveStrengthDetail({ onBack }) {
             </div>
 
             {/* Input Controls */}
-            <div className="bg-white rounded-2xl shadow-lg p-8">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Test Parameters</h3>
-              <div className="space-y-6">
+            <div className="bg-white rounded-2xl shadow-lg p-5">
+              <h3 className="text-base font-bold text-gray-900 mb-4">
+                Test Parameters
+              </h3>
+              <div className="space-y-4">
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-2">
-                    <Calendar className="w-5 h-5 text-red-600" />
+                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-red-600" />
                     Select Test Date
                   </label>
-                  <div className="flex gap-3">
+                  <div className="flex gap-2">
                     <input
                       type="date"
                       value={selectedDate}
                       min={getTodayDate()}
                       onChange={(e) => setSelectedDate(e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-xl px-5 py-3 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
                     />
-                    <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition">
-                      Save Date
+                    <button className="bg-red-600 hover:bg-red-700 text-white w-24 py-2 rounded-lg text-sm font-semibold transition">
+                      Save
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Applied Load (kN)</label>
-                  <div className="flex gap-3">
+                  <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                    Applied Load (kN)
+                  </label>
+                  <div className="flex gap-2">
                     <input
                       type="text"
                       placeholder="e.g. 450.75"
-                      className="flex-1 border border-gray-300 rounded-xl px-5 py-3 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
                     />
-                    <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition">
-                      Apply Load
+                    <button className="bg-red-600 hover:bg-red-700 text-white w-24 py-2 rounded-lg text-sm font-semibold transition">
+                      Apply
                     </button>
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-sm font-semibold text-gray-700 mb-2 block">Curing Days</label>
-                  <div className="flex gap-3">
+                  <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                    Curing Days
+                  </label>
+                  <div className="flex gap-2">
                     <input
                       type="text"
                       placeholder="e.g. 7 or 28"
-                      className="flex-1 border border-gray-300 rounded-xl px-5 py-3 focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
                     />
-                    <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-xl font-semibold transition">
-                      Save Days
+                    <button className="bg-red-600 hover:bg-red-700 text-white w-24 py-2 rounded-lg text-sm font-semibold transition">
+                      Save
                     </button>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Average Data Summary */}
+            <div className="bg-white rounded-2xl shadow-lg p-6 border-t-4 border-red-600">
+              <h3 className="text-base font-bold text-gray-900 mb-4">
+                Average Test Data
+              </h3>
+
+              {/* Main Focus: Compressive Strength */}
+              <div className="bg-white rounded-2xl p-6 shadow-lg border-2 border-red-500 mb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-xs font-semibold text-red-600 uppercase tracking-wide">
+                    Compressive Strength Test
+                  </span>
+                  <span className="bg-green-100 text-green-700 text-xs font-bold px-3 py-1 rounded-full">
+                    ✓ Passed
+                  </span>
+                </div>
+
+                <div className="flex items-end gap-3 mb-4">
+                  <div className="text-6xl font-black text-red-600">20.02</div>
+                  <div className="text-2xl font-bold text-gray-600 mb-2">
+                    MPa
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-red-50 rounded-lg p-3 border border-red-200">
+                    <p className="text-xs text-gray-600 mb-1">Cube Grade</p>
+                    <p className="text-xl font-bold text-red-700">M20</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                    <p className="text-xs text-gray-600 mb-1">Test Date</p>
+                    <p className="text-xl font-bold text-gray-800">Today</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Other Parameters */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
+                  <p className="text-xs text-gray-600">Avg. Length</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">
+                    150.12 mm
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
+                  <p className="text-xs text-gray-600">Avg. Width</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">
+                    149.98 mm
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
+                  <p className="text-xs text-gray-600">Avg. Area</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">
+                    229.98 mm²
+                  </p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200">
+                  <p className="text-xs text-gray-600">Curing Days</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">7</p>
+                </div>
+                <div className="bg-gray-50 rounded-lg p-3 text-center border border-gray-200 col-span-2 md:col-span-2">
+                  <p className="text-xs text-gray-600">Applied Load</p>
+                  <p className="text-lg font-bold text-gray-900 mt-1">
+                    450.75 kN
+                  </p>
                 </div>
               </div>
             </div>
@@ -303,9 +364,11 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
           {/* Right Column: Crack Detection */}
           <div className="bg-white rounded-2xl shadow-lg p-8 border-t-4 border-red-600">
-            <h2 className="text-2xl font-bold text-gray-900 mb-8">AI Crack Detection</h2>
+            <h2 className="text-2xl font-bold text-gray-900 mb-8">
+              AI Crack Detection
+            </h2>
 
-            {(uploadedImage || capturedImage) ? (
+            {uploadedImage || capturedImage ? (
               <div className="space-y-6">
                 <div className="relative">
                   <img
@@ -323,25 +386,41 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
                 {crackResult ? (
                   <div className="space-y-6">
-                    <div className={`p-6 rounded-2xl border-2 ${crackResult.metrics.has_crack ? 'bg-red-50 border-red-300' : 'bg-green-50 border-green-300'}`}>
+                    <div
+                      className={`p-6 rounded-2xl border-2 ${
+                        crackResult.metrics.has_crack
+                          ? "bg-red-50 border-red-300"
+                          : "bg-green-50 border-green-300"
+                      }`}
+                    >
                       <h4 className="text-xl font-bold mb-4 flex items-center gap-3">
-                        {crackResult.metrics.has_crack ? '⚠️ Crack Detected' : '✓ No Crack Detected'}
+                        {crackResult.metrics.has_crack
+                          ? "⚠️ Crack Detected"
+                          : "✓ No Crack Detected"}
                       </h4>
-                      <p className="text-2xl font-bold">{crackResult.message}</p>
+                      <p className="text-2xl font-bold">
+                        {crackResult.message}
+                      </p>
                       <div className="grid grid-cols-2 gap-6 mt-6">
                         <div>
                           <p className="text-gray-600">Crack Coverage</p>
-                          <p className="text-3xl font-bold text-gray-900">{crackResult.metrics.crack_percentage}%</p>
+                          <p className="text-3xl font-bold text-gray-900">
+                            {crackResult.metrics.crack_percentage}%
+                          </p>
                         </div>
                         <div>
                           <p className="text-gray-600">Crack Pixels</p>
-                          <p className="text-3xl font-bold text-gray-900">{crackResult.metrics.crack_pixels.toLocaleString()}</p>
+                          <p className="text-3xl font-bold text-gray-900">
+                            {crackResult.metrics.crack_pixels.toLocaleString()}
+                          </p>
                         </div>
                       </div>
                     </div>
 
                     <div>
-                      <h4 className="text-xl font-bold mb-4">Segmentation Mask</h4>
+                      <h4 className="text-xl font-bold mb-4">
+                        Segmentation Mask
+                      </h4>
                       <img
                         src={`data:image/png;base64,${crackResult.mask_base64}`}
                         alt="Crack mask"
@@ -370,7 +449,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
                       disabled={isAnalyzing}
                       className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white py-4 rounded-xl font-bold transition shadow-lg"
                     >
-                      {isAnalyzing ? 'Analyzing...' : 'Analyze Crack'}
+                      {isAnalyzing ? "Analyzing..." : "Analyze Crack"}
                     </button>
                   </div>
                 )}
@@ -379,8 +458,12 @@ export default function CompressiveStrengthDetail({ onBack }) {
               <div className="space-y-8">
                 <div className="bg-gray-100 border-2 border-dashed border-gray-300 rounded-2xl h-96 flex flex-col items-center justify-center text-center px-8">
                   <div className="bg-gray-200 border-2 border-dashed rounded-xl w-40 h-40 mb-6" />
-                  <p className="text-2xl font-semibold text-gray-600">No Image Selected</p>
-                  <p className="text-gray-500 mt-2">Capture or upload a clear image of the concrete surface</p>
+                  <p className="text-2xl font-semibold text-gray-600">
+                    No Image Selected
+                  </p>
+                  <p className="text-gray-500 mt-2">
+                    Capture or upload a clear image of the concrete surface
+                  </p>
                 </div>
 
                 <button
