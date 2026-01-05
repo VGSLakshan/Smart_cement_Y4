@@ -291,8 +291,8 @@ const response = await fetch('http://localhost:8000/api/hirumi/predict', {
 
 - **Sanchitha** - Crack Detection System (Component 3)
 - **Chamudini** -  (Component 1)
-  **Kanchana** - Raw Meal Particle Analysis (Component 2)
-  **Hirumi** - Cement Strength Prediction (Component 4)
+- **Kanchana** - Raw Meal Particle Analysis (Component 2)
+- **Hirumi** - Cement Strength Prediction (Component 4)
 
 ---
 
