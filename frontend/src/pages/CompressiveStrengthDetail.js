@@ -6,9 +6,16 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const [uploadedImage, setUploadedImage] = useState(null);
   const [crackResult, setCrackResult] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedDate, setSelectedDate] = useState('');
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
+
+  // Get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
 
   const startCamera = async () => {
     setShowCamera(true);
@@ -153,6 +160,30 @@ export default function CompressiveStrengthDetail({ onBack }) {
               <div className="bg-gray-50 rounded p-4"><p className="text-sm text-gray-600">Compressive Strength (MPa)</p><p className="text-2xl font-bold text-red-600">20.02</p></div>
             </div>
             <div className="mt-6 space-y-4">
+              <div>
+                <label className="text-sm text-gray-600">Select Test Date</label>
+                <div className="flex gap-2 mt-2">
+                  <input 
+                    type="date" 
+                    value={selectedDate}
+                    min={getTodayDate()}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm" 
+                  />
+                  <button 
+                    onClick={() => {
+                      if (selectedDate) {
+                        alert(`Date selected: ${selectedDate}`);
+                      } else {
+                        alert('Please select a date');
+                      }
+                    }}
+                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm"
+                  >
+                    Save Date
+                  </button>
+                </div>
+              </div>
               <div>
                 <label className="text-sm text-gray-600">Enter Applied Load (kN)</label>
                 <div className="flex gap-2 mt-2">
