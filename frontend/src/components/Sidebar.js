@@ -1,7 +1,4 @@
-import CementClickerImageAnalyser from '../components/CementClickerImageAnalyser';
-import '../components/CementClickerImageAnalyser/styles/CementClickerImageAnalyser.css';
-
-export default function Sidebar({ onNavigate, currentPage }) {
+export default function Sidebar({ onNavigate, currentPage, onLogout }) {
   return (
     <aside className="w-72 bg-gray-50 shadow-xl min-h-screen flex flex-col justify-between border-r border-gray-200">
       <div>
@@ -61,6 +58,16 @@ export default function Sidebar({ onNavigate, currentPage }) {
             </svg>
             <span>Settings</span>
           </a>
+
+          <button 
+            onClick={onLogout}
+            className="flex items-center gap-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 hover:text-red-700 transition-all duration-200 w-full text-left mt-4 border-t border-gray-200 pt-4"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+            </svg>
+            <span className="font-semibold">Logout</span>
+          </button>
         </nav>
       </div>
 

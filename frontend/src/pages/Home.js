@@ -10,10 +10,10 @@ export default function Home({ onNavigate }) {
     },
     
     {
-      title: 'Cement Clicker Image Analyser',
+      title: 'Material Mix Ratio and Temperature Analysis',
       description:
-        'Upload images of cement structures to detect cracks and analyze structural integrity using AI-powered computer vision.',
-      page: 'cement-clicker' // Added the page route
+        'Analyze the relationship between material composition and the internal temperature of cement cubes for enhanced performance.',
+      page: null
     },
     {
       title: 'Compressive Strength and Crack Detection',
@@ -26,6 +26,12 @@ export default function Home({ onNavigate }) {
       description:
         'Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using advanced ensemble machine learning models (XGBoost + LightGBM).',
       page: 'cement-strength'
+    },
+    {
+      title: 'Cement Raw meals color particles identification',
+      description:
+        'Identify and analyze the color particles in cement raw meals to assess quality and consistency.',
+      page: 'raw-meal'
     },
   ];
 
