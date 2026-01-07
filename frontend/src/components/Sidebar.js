@@ -1,6 +1,6 @@
 export default function Sidebar({ onNavigate, currentPage, onLogout }) {
   return (
-    <aside className="w-72 bg-gray-50 shadow-xl min-h-screen flex flex-col justify-between border-r border-gray-200">
+    <aside className="w-72 bg-gray-50 shadow-xl h-screen flex flex-col justify-between border-r border-gray-200 fixed left-0 top-0 overflow-y-auto">
       <div>
         {/* INSEE Logo Header */}
         <div className="px-6 py-8 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
