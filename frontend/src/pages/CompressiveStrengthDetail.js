@@ -167,46 +167,44 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
       <main className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 sm:py-8 lg:py-10">
         {/* Header */}
-        
+
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6 sm:mb-8">
-  <div className="flex flex-col items-center justify-center text-center gap-4">
-    
-    {/* Title */}
-    <div>
-      <div className="flex items-center justify-center gap-2 mb-2">
-        <div className="bg-red-600 p-2 rounded-lg">
-          <Camera className="w-6 h-6 text-white" />
+          <div className="flex flex-col items-center justify-center text-center gap-4">
+            {/* Title */}
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="bg-red-600 p-2 rounded-lg">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  Compressive Strength & Crack Detection
+                </h1>
+              </div>
+              <p className="text-sm text-gray-600">
+                Real-time monitoring of concrete cube testing with AI-powered
+                crack analysis
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-wrap justify-center gap-3">
+              <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm shadow-md">
+                Start New Test
+              </button>
+
+              <button className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm">
+                Generate Report
+              </button>
+
+              <button
+                onClick={() => setShowHistory(true)}
+                className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm"
+              >
+                View History
+              </button>
+            </div>
+          </div>
         </div>
-        <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-          Compressive Strength & Crack Detection
-        </h1>
-      </div>
-      <p className="text-sm text-gray-600">
-        Real-time monitoring of concrete cube testing with AI-powered crack analysis
-      </p>
-    </div>
-
-    {/* Buttons */}
-    <div className="flex flex-wrap justify-center gap-3">
-      <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm shadow-md">
-        Start New Test
-      </button>
-
-      <button className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm">
-        Generate Report
-      </button>
-
-      <button
-        onClick={() => setShowHistory(true)}
-        className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm"
-      >
-        View History
-      </button>
-    </div>
-
-  </div>
-</div>
-
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Left Column: Sensor Data */}
@@ -255,6 +253,77 @@ export default function CompressiveStrengthDetail({ onBack }) {
                 Test Parameters
               </h3>
               <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                    Cube ID
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="e.g. C-2026-001"
+                      className="flex-1 border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                    />
+                    <button className="bg-red-600 hover:bg-red-700 text-white w-16 sm:w-20 lg:w-24 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex-shrink-0">
+                      Save
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-red-600" />
+                    Cube Made Date
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="date"
+                      max={getTodayDate()}
+                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                    />
+                    <button className="bg-red-600 hover:bg-red-700 text-white w-24 py-2 rounded-lg text-sm font-semibold transition">
+                      Save
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                    Testing Time
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      type="time"
+                      className="flex-1 border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                    />
+                    <button className="bg-red-600 hover:bg-red-700 text-white w-16 sm:w-20 lg:w-24 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex-shrink-0">
+                      Save
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                    Predict Grade
+                  </label>
+                  <div className="flex gap-2">
+                    <select className="flex-1 border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition">
+                      <option value="">Select Grade</option>
+                      <option value="M10">M10</option>
+                      <option value="M15">M15</option>
+                      <option value="M20">M20</option>
+                      <option value="M25">M25</option>
+                      <option value="M30">M30</option>
+                      <option value="M35">M35</option>
+                      <option value="M40">M40</option>
+                      <option value="M45">M45</option>
+                      <option value="M50">M50</option>
+                    </select>
+                    <button className="bg-red-600 hover:bg-red-700 text-white w-16 sm:w-20 lg:w-24 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex-shrink-0">
+                      Save
+                    </button>
+                  </div>
+                </div>
+
                 <div>
                   <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <Calendar className="w-4 h-4 text-red-600" />
