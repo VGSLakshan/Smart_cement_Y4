@@ -34,7 +34,7 @@ export default function RawMealPages() {
           onClick={() => setActiveTab("analyze")}
           className={`px-4 py-2 rounded-lg font-semibold ${
             activeTab === "analyze"
-              ? "bg-blue-600 text-white"
+              ? "bg-red-600 text-white"
               : "bg-white text-gray-700"
           }`}
         >
@@ -45,7 +45,7 @@ export default function RawMealPages() {
           onClick={() => setActiveTab("history")}
           className={`px-4 py-2 rounded-lg font-semibold ${
             activeTab === "history"
-              ? "bg-blue-600 text-white"
+              ? "bg-red-600 text-white"
               : "bg-white text-gray-700"
           }`}
         >
