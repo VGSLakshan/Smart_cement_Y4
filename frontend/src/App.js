@@ -42,13 +42,13 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen">
       <Sidebar
         onNavigate={setCurrentPage}
         currentPage={currentPage}
         onLogout={handleLogout}
       />
-      {renderPage()}
+      <div className="ml-72">{renderPage()}</div>
     </div>
   );
 }
