@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import CompressiveStrengthDetail from "./pages/CompressiveStrengthDetail";
 import CementStrengthDetail from "./pages/CementStrengthDetail";
 import RawMealPages from "./pages/RawMealPages";
+import CementClickerImageAnalyserDetail from "./pages/CementClickerImageAnalyserDetail";
 import Login from "./pages/Login";
 
 export default function App() {
@@ -38,6 +39,8 @@ export default function App() {
         return <RawMealPages />;
       default:
         return <Home onNavigate={setCurrentPage} />;
+        case "material-mix":
+  return <CementClickerImageAnalyserDetail onBack={() => setCurrentPage("home")} />;
     }
   };
 

@@ -9,12 +9,12 @@ export default function Home({ onNavigate }) {
       page: null
     },
     
-    {
-      title: 'Material Mix Ratio and Temperature Analysis',
-      description:
-        'Analyze the relationship between material composition and the internal temperature of cement cubes for enhanced performance.',
-      page: null
-    },
+   {
+  title: 'Cement Clinker Microscopy Image Analysis',
+  description:
+    'Analyze cement clinker microscopy images to identify mineral phases and assess quality characteristics.',
+  page: 'material-mix'
+},
     {
       title: 'Compressive Strength and Crack Detection',
       description:
