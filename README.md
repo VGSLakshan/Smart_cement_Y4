@@ -9,32 +9,54 @@ The **INSEE Smart Cement Platform** is an advanced AI-powered prediction and ana
 ### Key Features
 
 - 🎯 **Multi-Output Strength Prediction**: Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using ensemble ML models (XGBoost + LightGBM)
-- 🔬 **Raw Meal Particle Analysis**: YOLO v8-based particle detection and color identification for quality control
+- 🔬 **Raw Meal Particle Analysis**: YOLOv9-based particle detection and color identification (dark red, light red, white) for quality control
 - 🧱 **Crack Detection System**: Deep learning U-Net segmentation for structural integrity analysis
 - 📊 **IoT Cube Monitoring**: Real-time environmental data tracking during cement curing process
 - 🔐 **Secure Authentication**: JWT-based user authentication and session management
 - 📈 **Historical Analytics**: Track predictions, generate reports, and analyze trends
 
+---
+
+## 🏛️ System Architecture
+
+![System Architecture Diagram](architecture-diagram.png)
+
+The platform follows a modular microservices architecture:
+
+1. **Frontend Layer**: React-based user interface for seamless interaction
+2. **Authentication Layer**: JWT-based secure login system
+3. **API Gateway**: FastAPI backend routing requests to specialized modules
+4. **Input Processing**: Multiple input types (images, data, environmental features)
+5. **ML Analysis Module**: Pre-trained models with optimization/regression capabilities
+6. **Four Specialized Components**:
+   - Cement Phase Classification (MobileNetV2/ImageNet)
+   - IoT-Based Measurement & Crack Detection (U-Net)
+   - Cement Strength Predictor with Environmental Sensitivity (XGBoost + LightGBM)
+   - Color-Based Particle Identification (YOLOv9)
+7. **Result Summary**: Unified dashboard displaying all predictions and analyses
+
 ```
 
 ### Four Research Components
 
-1. **IoT-Based Cube Dimension Monitoring**
-   - Real-time tracking of cement cube dimensions
-   - Environmental data logging (temperature, humidity)
-   - TensorFlow-based time series analysis
+1. **Smart Cement Analyzer - AI-powered Cement Clinker Phase Classification**
+   - Automated cement clinker phase classification
+   - Deep learning model (MobileNetV2 + Transfer Learning)
+   - Detailed confidence scores and phase information
+   - Classes: C2S, C3A, C3S, C4AF
 
-2. **Material Mix Ratio and Temperature Analysis**
-   - YOLO v8 object detection for particle identification
-   - Color-based quality assessment
-   - Size and distribution analysis
+2. **Raw Meal Particle Analysis**
+   - YOLOv9 machine learning model for detecting and counting cement raw meal particles
+   - Microscopic image analysis and particle detection
+   - Color-based particle identification: Dark red, light red, and white particles
+   - Automated particle counting and distribution analysis
 
-3. **Compressive Strength and Crack Detection**
+3. **IoT Cube Monitoring, Compressive Strength and Crack Detection**
    - U-Net deep learning segmentation
    - Structural integrity assessment
    - Crack severity analysis
 
-4. **Cement Strength Prediction (Multi-Output)**
+4. **Early and Long-Term Cement Strength Prediction (Multi-Output)**
    - Predict strength at 5 time intervals (1D, 2D, 7D, 28D, 56D)
    - Ensemble learning (XGBoost + LightGBM)
    - 14 input parameters (physical + chemical composition)
@@ -60,7 +82,7 @@ The **INSEE Smart Cement Platform** is an advanced AI-powered prediction and ana
 ### Machine Learning & AI
 - **TensorFlow**: 2.20.0 (IoT monitoring, crack detection)
 - **PyTorch**: 2.9.1 (YOLO models)
-- **Ultralytics YOLO**: 8.3.248 (particle detection)
+- **Ultralytics YOLOv9**: Latest (particle detection and counting)
 - **XGBoost**: Latest (strength prediction)
 - **LightGBM**: Latest (strength prediction)
 - **Keras**: 3.13.0
@@ -289,9 +311,9 @@ const response = await fetch('http://localhost:8000/api/hirumi/predict', {
 
 ## 👥 Contributors
 
-- **Sanchitha** - Crack Detection System (Component 3)
-- **Chamudini** -  (Component 1)
+- **Chamudini** - cement clinker phase classification system(Component 1)
 - **Kanchana** - Raw Meal Particle Analysis (Component 2)
+- **Sanchitha** - IoT Cube Monitoring & Crack Detection System (Component 3)
 - **Hirumi** - Cement Strength Prediction (Component 4)
 
 ---
