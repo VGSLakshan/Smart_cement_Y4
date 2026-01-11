@@ -2,22 +2,22 @@
 
 ![INSEE Logo](frontend/public/insee-logo.png)
 
-## 🏗️ Project Overview
+## Project Overview
 
 The **INSEE Smart Cement Platform** is an advanced AI-powered prediction and analysis system designed for cement quality control and research. This comprehensive platform integrates four cutting-edge machine learning components to revolutionize cement manufacturing processes through real-time monitoring, quality assessment, and predictive analytics.
 
 ### Key Features
 
-- 🎯 **Multi-Output Strength Prediction**: Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using ensemble ML models (XGBoost + LightGBM)
-- 🔬 **Raw Meal Particle Analysis**: YOLOv9-based particle detection and color identification (dark red, light red, white) for quality control
-- 🧱 **Crack Detection System**: Deep learning U-Net segmentation for structural integrity analysis
-- 📊 **IoT Cube Monitoring**: Real-time environmental data tracking during cement curing process
-- 🔐 **Secure Authentication**: JWT-based user authentication and session management
-- 📈 **Historical Analytics**: Track predictions, generate reports, and analyze trends
+- **Multi-Output Strength Prediction**: Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using ensemble ML models (XGBoost + LightGBM)
+- **Raw Meal Particle Analysis**: YOLOv9-based particle detection and color identification (dark red, light red, white) for quality control
+- **Crack Detection System**: Deep learning U-Net segmentation for structural integrity analysis
+- **IoT Cube Monitoring**: Real-time environmental data tracking during cement curing process
+- **Secure Authentication**: JWT-based user authentication and session management
+- **Historical Analytics**: Track predictions, generate reports, and analyze trends
 
 ---
 
-## 🏛️ System Architecture
+## System Architecture
 
 ![System Architecture Diagram](architecture-diagram.png)
 
@@ -63,7 +63,7 @@ The platform follows a modular microservices architecture:
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 ### Frontend
 - **Framework**: React 18
@@ -98,7 +98,7 @@ The platform follows a modular microservices architecture:
 
 ---
 
-## 📋 Prerequisites
+## Prerequisites
 
 Before running the project, ensure you have the following installed:
 
@@ -110,7 +110,7 @@ Before running the project, ensure you have the following installed:
 
 ---
 
-## 📦 Dependencies
+## Dependencies
 
 ### Frontend Dependencies
 
@@ -152,7 +152,7 @@ psutil>=5.9.0
 
 ---
 
-## 🚀 Installation & Setup
+## Installation & Setup
 
 ### 1. Clone the Repository
 
@@ -189,7 +189,7 @@ npm install lucide-react axios
 
 ---
 
-## ▶️ Running the Project
+## Running the Project
 
 ### Start Backend Server
 
@@ -228,7 +228,7 @@ npm start
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Smart_cement_Y4/
@@ -271,7 +271,7 @@ Smart_cement_Y4/
 
 ---
 
-## 🔧 Configuration
+## Configuration
 
 ### Backend Configuration
 
@@ -301,7 +301,7 @@ const response = await fetch('http://localhost:8000/api/hirumi/predict', {
 
 ---
 
-## 📊 API Endpoints
+## API Endpoints
 
 ### Authentication
 - `POST /api/auth/login` - User login
@@ -309,7 +309,7 @@ const response = await fetch('http://localhost:8000/api/hirumi/predict', {
 
 ---
 
-## 👥 Contributors
+## Contributors
 
 - **Chamudini** - cement clinker phase classification system(Component 1)
 - **Kanchana** - Raw Meal Particle Analysis (Component 2)
@@ -318,14 +318,14 @@ const response = await fetch('http://localhost:8000/api/hirumi/predict', {
 
 ---
 
-## 📄 License
+## License
 
 This project is developed for **INSEE Cement - AI Research Lab**.  
 © 2025 INSEE. All rights reserved.
 
 ---
 
-## 🔗 Related Links
+## Related Links
 
 - **FastAPI Documentation**: https://fastapi.tiangolo.com/
 - **React Documentation**: https://react.dev/
@@ -334,8 +334,8 @@ This project is developed for **INSEE Cement - AI Research Lab**.
 
 ---
 
-## 📧 Support
+## Support
 
 For questions or issues, please contact the INSEE AI Research Lab team.
 
-**Built with ❤️ for Innovation in Cement Manufacturing**
+**Built with dedication for Innovation in Cement Manufacturing**
