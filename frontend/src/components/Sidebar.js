@@ -93,9 +93,13 @@ export default function Sidebar({ onNavigate, currentPage, onLogout }) {
             <span>Documentation</span>
           </a>
 
-          <a
-            className="flex items-center gap-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50 hover:text-red-600 transition-all duration-200"
-            href="#"
+          <button
+            onClick={() => onNavigate && onNavigate("settings")}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg w-full text-left transition-all duration-200 ${
+              currentPage === "settings"
+                ? "bg-red-50 text-red-600 font-semibold shadow-sm"
+                : "text-gray-700 hover:bg-gray-50 hover:text-red-600"
+            }`}
           >
             <svg
               className="w-5 h-5"
@@ -117,7 +121,7 @@ export default function Sidebar({ onNavigate, currentPage, onLogout }) {
               />
             </svg>
             <span>Settings</span>
-          </a>
+          </button>
 
           <button
             onClick={onLogout}

@@ -118,26 +118,76 @@ export default function ViewHistory({ onBack }) {
   const [filterGrade, setFilterGrade] = useState("all");
 
   const filteredData = historyData.filter((item) => {
-    const dateObj = new Date(item.date);
-    const monthName = dateObj.toLocaleDateString("en-US", { month: "long" }); // e.g., "January"
-    const monthShort = dateObj.toLocaleDateString("en-US", { month: "short" }); // e.g., "Jan"
-    const year = dateObj.getFullYear().toString(); // e.g., "2026"
-    const day = dateObj.getDate().toString(); // e.g., "4"
-    const formattedDate = dateObj.toLocaleDateString("en-US", {
+    // Generate Cube ID
+    const cubeId = `CUBE-${String(item.id).padStart(4, "0")}`;
+
+    // Test Date
+    const testDateObj = new Date(item.date);
+    const testMonthName = testDateObj.toLocaleDateString("en-US", {
+      month: "long",
+    });
+    const testMonthShort = testDateObj.toLocaleDateString("en-US", {
+      month: "short",
+    });
+    const testYear = testDateObj.getFullYear().toString();
+    const testDay = testDateObj.getDate().toString();
+    const testFormattedDate = testDateObj.toLocaleDateString("en-US", {
       year: "numeric",
       month: "short",
       day: "numeric",
-    }); // e.g., "Jan 4, 2026"
+    });
+
+    // Cube Made Date
+    const madeDateObj = new Date(testDateObj);
+    madeDateObj.setDate(madeDateObj.getDate() - item.curingDays);
+    const madeMonthName = madeDateObj.toLocaleDateString("en-US", {
+      month: "long",
+    });
+    const madeMonthShort = madeDateObj.toLocaleDateString("en-US", {
+      month: "short",
+    });
+    const madeYear = madeDateObj.getFullYear().toString();
+    const madeDay = madeDateObj.getDate().toString();
+    const madeFormattedDate = madeDateObj.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+
+    // Testing Time
+    const testingTime = "09:00 AM";
 
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch =
+      // Cube ID
+      cubeId.toLowerCase().includes(searchLower) ||
+      // Test Date
       item.date.includes(searchTerm) ||
-      monthName.toLowerCase().includes(searchLower) ||
-      monthShort.toLowerCase().includes(searchLower) ||
-      year.includes(searchTerm) ||
-      day.includes(searchTerm) ||
-      formattedDate.toLowerCase().includes(searchLower) ||
+      testMonthName.toLowerCase().includes(searchLower) ||
+      testMonthShort.toLowerCase().includes(searchLower) ||
+      testYear.includes(searchTerm) ||
+      testDay.includes(searchTerm) ||
+      testFormattedDate.toLowerCase().includes(searchLower) ||
+      // Cube Made Date
+      madeMonthName.toLowerCase().includes(searchLower) ||
+      madeMonthShort.toLowerCase().includes(searchLower) ||
+      madeYear.includes(searchTerm) ||
+      madeDay.includes(searchTerm) ||
+      madeFormattedDate.toLowerCase().includes(searchLower) ||
+      // Testing Time
+      testingTime.toLowerCase().includes(searchLower) ||
+      // Compressive Strength
+      item.compressiveStrength.toString().includes(searchTerm) ||
+      // Average Area
+      item.averageArea.toString().includes(searchTerm) ||
+      item.averageArea.toFixed(1).includes(searchTerm) ||
+      // Curing Days
+      item.curingDays.toString().includes(searchTerm) ||
+      // Grade
+      item.grade.toLowerCase().includes(searchLower) ||
+      // Predict Grade (same as grade for now)
       item.grade.toLowerCase().includes(searchLower);
+
     const matchesGrade = filterGrade === "all" || item.grade === filterGrade;
     return matchesSearch && matchesGrade;
   });
@@ -160,7 +210,7 @@ export default function ViewHistory({ onBack }) {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search by date or grade..."
+                placeholder="Search by Cube ID, Date, Testing Time, Strength, Area, Curing Days, or Grade..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full border border-gray-300 rounded px-4 py-2 text-sm"
@@ -186,7 +236,16 @@ export default function ViewHistory({ onBack }) {
               <thead className="bg-gray-50">
                 <tr>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Cube ID
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Test Date
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Cube Made Date
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Testing Time
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Compressive Strength (MPa)
@@ -199,6 +258,9 @@ export default function ViewHistory({ onBack }) {
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Grade
+                  </th>
+                  <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Predict Grade
                   </th>
                   <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Crack Image
@@ -216,11 +278,31 @@ export default function ViewHistory({ onBack }) {
                       className="hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">
+                        CUBE-{String(item.id).padStart(4, "0")}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 text-center">
                         {new Date(item.date).toLocaleDateString("en-US", {
                           year: "numeric",
                           month: "short",
                           day: "numeric",
                         })}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                        {(() => {
+                          const testDate = new Date(item.date);
+                          const madeDate = new Date(testDate);
+                          madeDate.setDate(
+                            madeDate.getDate() - item.curingDays
+                          );
+                          return madeDate.toLocaleDateString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          });
+                        })()}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                        09:00 AM
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                         <span className="font-semibold text-red-600">
@@ -235,6 +317,11 @@ export default function ViewHistory({ onBack }) {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                         <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+                          {item.grade}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <span className="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           {item.grade}
                         </span>
                       </td>
@@ -254,7 +341,6 @@ export default function ViewHistory({ onBack }) {
                             // Add actual download logic here
                           }}
                           className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 font-semibold flex items-center gap-2 mx-auto"
-
                         >
                           <svg
                             className="w-4 h-4"

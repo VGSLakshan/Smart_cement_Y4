@@ -4,6 +4,7 @@ import Home from "./pages/Home";
 import CompressiveStrengthDetail from "./pages/CompressiveStrengthDetail";
 import CementStrengthDetail from "./pages/CementStrengthDetail";
 import RawMealPages from "./pages/RawMealPages";
+import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 
 export default function App() {
@@ -36,6 +37,8 @@ export default function App() {
         return <CementStrengthDetail />;
       case "raw-meal":
         return <RawMealPages />;
+      case "settings":
+        return <Settings />;
       default:
         return <Home onNavigate={setCurrentPage} />;
     }
