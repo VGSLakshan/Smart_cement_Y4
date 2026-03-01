@@ -476,32 +476,59 @@ function CementStrengthPrediction() {
 
               <div className="strength-progression">
                 <h3><span className="chart-icon"><TrendingUp size={20} /></span> Strength Development Timeline</h3>
-                <div className="progression-chart">
+                <p className="timeline-subtitle">Watch how your cement gains strength over time</p>
+                
+                <div className="timeline-container">
+                  <div className="timeline-line"></div>
                   {[
-                    { day: '1D', value: prediction.predictions.strength_1d, label: '1 Day' },
-                    { day: '2D', value: prediction.predictions.strength_2d, label: '2 Days' },
-                    { day: '7D', value: prediction.predictions.strength_7d, label: '7 Days' },
-                    { day: '28D', value: prediction.predictions.strength_28d, label: '28 Days', highlight: true },
-                    { day: '56D', value: prediction.predictions.strength_56d, label: '56 Days', highlight: true }
+                    { day: '1D', value: prediction.predictions.strength_1d, label: '1 Day', icon: '🌱', color: '#e8f5e9', border: '#66bb6a' },
+                    { day: '2D', value: prediction.predictions.strength_2d, label: '2 Days', icon: '🌿', color: '#e3f2fd', border: '#42a5f5' },
+                    { day: '7D', value: prediction.predictions.strength_7d, label: '7 Days', icon: '💪', color: '#fff3e0', border: '#ffa726' },
+                    { day: '28D', value: prediction.predictions.strength_28d, label: '28 Days', icon: '🏆', color: '#fce4ec', border: '#ec407a', milestone: true },
+                    { day: '56D', value: prediction.predictions.strength_56d, label: '56 Days', icon: '🎯', color: '#f3e5f5', border: '#ab47bc', milestone: true }
                   ].map((item, idx) => {
                     const maxStrength = prediction.predictions.strength_56d;
                     const percentage = (item.value / maxStrength) * 100;
+                    const growth = idx > 0 ? ((item.value - [
+                      prediction.predictions.strength_1d,
+                      prediction.predictions.strength_2d,
+                      prediction.predictions.strength_7d,
+                      prediction.predictions.strength_28d
+                    ][idx - 1]) / [
+                      prediction.predictions.strength_1d,
+                      prediction.predictions.strength_2d,
+                      prediction.predictions.strength_7d,
+                      prediction.predictions.strength_28d
+                    ][idx - 1] * 100).toFixed(0) : 0;
+                    
                     return (
-                      <div key={idx} className={`progression-item ${item.highlight ? 'highlight' : ''}`}>
-                        <div className="progression-label-group">
-                          <span className="progression-day">{item.day}</span>
-                          <span className="progression-label">{item.label}</span>
+                      <div key={idx} className={`timeline-item ${item.milestone ? 'milestone' : ''}`}>
+                        <div className="timeline-marker" style={{ borderColor: item.border }}>
+                          <span className="timeline-icon">{item.icon}</span>
                         </div>
-                        <div className="progression-bar-wrapper">
-                          <div className="progression-bar">
-                            <div 
-                              className="progression-fill" 
-                              style={{ width: `${percentage}%` }}
-                            >
-                              <span className="progression-value">{item.value.toFixed(1)} MPa</span>
+                        <div className="timeline-content" style={{ backgroundColor: item.color, borderLeftColor: item.border }}>
+                          <div className="timeline-header">
+                            <div className="timeline-day-badge" style={{ backgroundColor: item.border }}>
+                              {item.day}
                             </div>
+                            <span className="timeline-label">{item.label}</span>
                           </div>
-                          <span className="progression-percentage">{percentage.toFixed(0)}%</span>
+                          <div className="strength-value-display">
+                            <span className="strength-number">{item.value.toFixed(1)}</span>
+                            <span className="strength-unit">MPa</span>
+                          </div>
+                          <div className="timeline-details">
+                            <div className="detail-item">
+                              <span className="detail-label">Progress:</span>
+                              <span className="detail-value">{percentage.toFixed(0)}% of final</span>
+                            </div>
+                            {idx > 0 && (
+                              <div className="detail-item growth">
+                                <span className="detail-label">Growth:</span>
+                                <span className="detail-value">+{growth}%</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -1075,7 +1102,7 @@ function CementStrengthPrediction() {
         }
 
         .strength-progression h3 {
-          margin-bottom: 2rem;
+          margin-bottom: 0.5rem;
           color: #2d3748;
           font-size: 1.5rem;
           font-weight: 700;
@@ -1084,113 +1111,168 @@ function CementStrengthPrediction() {
           gap: 0.7rem;
         }
 
+        .timeline-subtitle {
+          color: #64748b;
+          font-size: 0.95rem;
+          margin-bottom: 2rem;
+          font-style: italic;
+        }
+
         .chart-icon {
           font-size: 1.7rem;
         }
 
-        .progression-chart {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        .progression-item {
-          display: flex;
-          align-items: center;
-          gap: 1.5rem;
-          padding: 1.2rem;
-          background: #f7fafc;
-          border-radius: 12px;
-          transition: all 0.3s ease;
-        }
-
-        .progression-item:hover {
-          background: white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          transform: translateX(5px);
-        }
-
-        .progression-item.highlight {
-          background: linear-gradient(135deg, #fef5e7 0%, #fad7a0 100%);
-        }
-
-        .progression-label-group {
-          display: flex;
-          flex-direction: column;
-          min-width: 80px;
-        }
-
-        .progression-day {
-          font-weight: 700;
-          font-size: 1.3rem;
-          color: #2d3748;
-        }
-
-        .progression-label {
-          font-size: 0.85rem;
-          color: #718096;
-        }
-
-        .progression-bar-wrapper {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .progression-bar {
-          flex: 1;
-          height: 46px;
-          background: #e2e8f0;
-          border-radius: 23px;
-          overflow: hidden;
+        .timeline-container {
           position: relative;
-          box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+          padding-left: 60px;
         }
 
-        .progression-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          padding-right: 1.2rem;
-          transition: width 1s ease-out;
-          min-width: 100px;
-          position: relative;
-        }
-
-        .progression-fill::after {
-          content: '';
+        .timeline-line {
           position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
-          animation: shimmer 2s infinite;
+          left: 30px;
+          top: 40px;
+          bottom: 40px;
+          width: 3px;
+          background: linear-gradient(to bottom, 
+            #66bb6a 0%, 
+            #42a5f5 25%, 
+            #ffa726 50%, 
+            #ec407a 75%, 
+            #ab47bc 100%);
+          border-radius: 2px;
         }
 
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-
-        .progression-value {
-          color: white;
-          font-weight: 700;
-          font-size: 1rem;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        .timeline-item {
           position: relative;
-          z-index: 1;
+          margin-bottom: 2rem;
+          display: flex;
+          align-items: flex-start;
+          gap: 1.5rem;
         }
 
-        .progression-percentage {
+        .timeline-marker {
+          position: absolute;
+          left: -44px;
+          top: 10px;
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          background: white;
+          border: 4px solid;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          z-index: 2;
+        }
+
+        .timeline-icon {
+          font-size: 1.4rem;
+        }
+
+        .timeline-item.milestone .timeline-marker {
+          width: 50px;
+          height: 50px;
+          top: 6px;
+          left: -48px;
+          border-width: 5px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          animation: pulse-milestone 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-milestone {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+
+        .timeline-content {
+          flex: 1;
+          padding: 1.3rem 1.5rem;
+          border-radius: 12px;
+          border-left: 5px solid;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+          transition: all 0.2s ease;
+        }
+
+        .timeline-content:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+        }
+
+        .timeline-header {
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .timeline-day-badge {
+          color: white;
+          padding: 0.3rem 0.9rem;
+          border-radius: 20px;
           font-weight: 700;
-          color: #4a5568;
+          font-size: 0.9rem;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .timeline-label {
+          font-weight: 600;
+          color: #475569;
+          font-size: 1rem;
+        }
+
+        .strength-value-display {
+          display: flex;
+          align-items: baseline;
+          gap: 0.4rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .strength-number {
+          font-size: 2.2rem;
+          font-weight: 800;
+          color: #1e293b;
+          line-height: 1;
+        }
+
+        .strength-unit {
           font-size: 1.1rem;
-          min-width: 50px;
-          text-align: right;
+          font-weight: 600;
+          color: #64748b;
+        }
+
+        .timeline-details {
+          display: flex;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+        }
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.4rem 0.8rem;
+          background: rgba(255,255,255,0.7);
+          border-radius: 8px;
+          font-size: 0.85rem;
+        }
+
+        .detail-item.growth {
+          background: rgba(76, 175, 80, 0.1);
+        }
+
+        .detail-label {
+          color: #64748b;
+          font-weight: 500;
+        }
+
+        .detail-value {
+          color: #1e293b;
+          font-weight: 700;
+        }
+
+        .detail-item.growth .detail-value {
+          color: #2e7d32;
         }
 
         @media (max-width: 768px) {
@@ -1231,15 +1313,40 @@ function CementStrengthPrediction() {
             align-items: stretch;
           }
 
-          .progression-item {
-            flex-direction: column;
-            align-items: stretch;
+          .timeline-container {
+            padding-left: 45px;
           }
 
-          .progression-label-group {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
+          .timeline-line {
+            left: 22px;
+          }
+
+          .timeline-marker {
+            left: -37px;
+            width: 36px;
+            height: 36px;
+          }
+
+          .timeline-item.milestone .timeline-marker {
+            width: 42px;
+            height: 42px;
+            left: -40px;
+          }
+
+          .timeline-icon {
+            font-size: 1.2rem;
+          }
+
+          .timeline-content {
+            padding: 1rem 1.2rem;
+          }
+
+          .strength-number {
+            font-size: 1.8rem;
+          }
+
+          .timeline-details {
+            gap: 0.8rem;
           }
         }
       `}</style>
