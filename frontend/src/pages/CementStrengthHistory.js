@@ -10,6 +10,7 @@ function CementStrengthHistory({ onNavigate }) {
   const [filterDays, setFilterDays] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
+  const [expandedPredictions, setExpandedPredictions] = useState(new Set());
 
   // Fetch predictions
   const fetchPredictions = async () => {
@@ -118,6 +119,17 @@ function CementStrengthHistory({ onNavigate }) {
     });
   };
 
+  // Toggle prediction details
+  const togglePrediction = (id) => {
+    const newExpanded = new Set(expandedPredictions);
+    if (newExpanded.has(id)) {
+      newExpanded.delete(id);
+    } else {
+      newExpanded.add(id);
+    }
+    setExpandedPredictions(newExpanded);
+  };
+
   return (
     <div className="cement-history-container">
       {/* Header */}
@@ -221,87 +233,121 @@ function CementStrengthHistory({ onNavigate }) {
           </div>
 
           <div className="predictions-list">
-            {currentItems.map((pred) => (
-              <div key={pred._id || pred.id} className="prediction-card">
-                <div className="prediction-header">
-                  <div className="prediction-date">
-                    {formatDate(pred.createdAt)}
-                  </div>
-                  <div className="prediction-actions">
-                    <button
-                      onClick={() => handleDelete(pred._id || pred.id)}
-                      className="delete-btn"
-                      title="Delete"
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-
-                <div className="prediction-body">
-                  {/* Input Parameters */}
-                  <div className="section">
-                    <h4>Grinding Parameters</h4>
-                    <div className="params-grid">
-                      <div className="param-item">
-                        <span className="param-label">Initial Time:</span>
-                        <span className="param-value">{pred.inputParameters?.grinding?.initial_min} min</span>
+            {currentItems.map((pred) => {
+              const isExpanded = expandedPredictions.has(pred._id || pred.id);
+              
+              return (
+                <div key={pred._id || pred.id} className="prediction-card">
+                  <div className="prediction-header">
+                    <div className="prediction-info">
+                      <div className="prediction-date">
+                        {formatDate(pred.createdAt)}
                       </div>
-                      <div className="param-item">
-                        <span className="param-label">Final Time:</span>
-                        <span className="param-value">{pred.inputParameters?.grinding?.final_min} min</span>
+                      <div className="prediction-summary">
+                        <span className="summary-item">
+                          <strong>Fineness:</strong> {pred.inputParameters?.grinding?.fineness} cm²/g
+                        </span>
+                        <span className="summary-divider">|</span>
+                        <span className="summary-item">
+                          <strong>28D Strength:</strong> {pred.predictions?.strength_28d?.toFixed(1)} MPa
+                        </span>
+                        <span className="summary-divider">|</span>
+                        <span className="summary-item">
+                          <strong>56D Strength:</strong> {pred.predictions?.strength_56d?.toFixed(1)} MPa
+                        </span>
                       </div>
-                      <div className="param-item">
-                        <span className="param-label">Fineness:</span>
-                        <span className="param-value">{pred.inputParameters?.grinding?.fineness} cm²/g</span>
-                      </div>
-                      <div className="param-item">
-                        <span className="param-label">Residue 45µm:</span>
-                        <span className="param-value">{pred.inputParameters?.grinding?.residue_45um}%</span>
-                      </div>
+                    </div>
+                    <div className="prediction-actions">
+                      <button
+                        onClick={() => togglePrediction(pred._id || pred.id)}
+                        className="show-more-btn"
+                      >
+                        {isExpanded ? 'Show Less' : 'Show More'}
+                      </button>
+                      <button
+                        onClick={() => handleDelete(pred._id || pred.id)}
+                        className="delete-btn"
+                        title="Delete"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
 
-                  {/* Chemical Composition */}
-                  <div className="section">
-                    <h4>Chemical Composition</h4>
-                    <div className="chem-grid">
-                      <span>SiO₂: {pred.inputParameters?.chemicalComposition?.sio2}%</span>
-                      <span>Al₂O₃: {pred.inputParameters?.chemicalComposition?.al2o3}%</span>
-                      <span>Fe₂O₃: {pred.inputParameters?.chemicalComposition?.fe2o3}%</span>
-                      <span>CaO: {pred.inputParameters?.chemicalComposition?.cao}%</span>
-                      <span>MgO: {pred.inputParameters?.chemicalComposition?.mgo}%</span>
-                      <span>SO₃: {pred.inputParameters?.chemicalComposition?.so3}%</span>
-                    </div>
-                  </div>
-
-                  {/* Predictions */}
-                  <div className="section">
-                    <h4>Predicted Strengths</h4>
-                    <div className="strength-timeline">
-                      {[
-                        { label: '1D', value: pred.predictions?.strength_1d },
-                        { label: '2D', value: pred.predictions?.strength_2d },
-                        { label: '7D', value: pred.predictions?.strength_7d },
-                        { label: '28D', value: pred.predictions?.strength_28d, highlight: true },
-                        { label: '56D', value: pred.predictions?.strength_56d, highlight: true }
-                      ].map((item, idx) => (
-                        <div key={idx} className={`strength-item ${item.highlight ? 'highlight' : ''}`}>
-                          <div className="strength-day">{item.label}</div>
-                          <div className="strength-value">{item.value?.toFixed(1)} MPa</div>
+                  {isExpanded && (
+                    <div className="prediction-body">
+                      {/* Input Parameters */}
+                      <div className="section">
+                        <h4>Grinding Parameters</h4>
+                        <div className="params-grid">
+                          <div className="param-item">
+                            <span className="param-label">Initial Time:</span>
+                            <span className="param-value">{pred.inputParameters?.grinding?.initial_min} min</span>
+                          </div>
+                          <div className="param-item">
+                            <span className="param-label">Final Time:</span>
+                            <span className="param-value">{pred.inputParameters?.grinding?.final_min} min</span>
+                          </div>
+                          <div className="param-item">
+                            <span className="param-label">Fineness:</span>
+                            <span className="param-value">{pred.inputParameters?.grinding?.fineness} cm²/g</span>
+                          </div>
+                          <div className="param-item">
+                            <span className="param-label">Residue 45µm:</span>
+                            <span className="param-value">{pred.inputParameters?.grinding?.residue_45um}%</span>
+                          </div>
+                          <div className="param-item">
+                            <span className="param-label">LOI:</span>
+                            <span className="param-value">{pred.inputParameters?.grinding?.loi}%</span>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
+                      </div>
 
-                  {/* Model Info */}
-                  <div className="model-info">
-                    <span className="model-badge">{pred.modelInfo?.modelUsed || 'Ensemble Model'}</span>
-                    <span className="confidence-badge">{pred.modelInfo?.confidence || 'High'} Confidence</span>
-                  </div>
+                      {/* Chemical Composition */}
+                      <div className="section">
+                        <h4>Chemical Composition</h4>
+                        <div className="chem-grid">
+                          <span>SiO₂: {pred.inputParameters?.chemicalComposition?.sio2}%</span>
+                          <span>Al₂O₃: {pred.inputParameters?.chemicalComposition?.al2o3}%</span>
+                          <span>Fe₂O₃: {pred.inputParameters?.chemicalComposition?.fe2o3}%</span>
+                          <span>CaO: {pred.inputParameters?.chemicalComposition?.cao}%</span>
+                          <span>MgO: {pred.inputParameters?.chemicalComposition?.mgo}%</span>
+                          <span>SO₃: {pred.inputParameters?.chemicalComposition?.so3}%</span>
+                          <span>K₂O: {pred.inputParameters?.chemicalComposition?.k2o}%</span>
+                          <span>Na₂O: {pred.inputParameters?.chemicalComposition?.na2o}%</span>
+                          <span>Cl: {pred.inputParameters?.chemicalComposition?.cl}%</span>
+                        </div>
+                      </div>
+
+                      {/* Predictions */}
+                      <div className="section">
+                        <h4>Predicted Strengths</h4>
+                        <div className="strength-timeline">
+                          {[
+                            { label: '1D', value: pred.predictions?.strength_1d },
+                            { label: '2D', value: pred.predictions?.strength_2d },
+                            { label: '7D', value: pred.predictions?.strength_7d },
+                            { label: '28D', value: pred.predictions?.strength_28d, highlight: true },
+                            { label: '56D', value: pred.predictions?.strength_56d, highlight: true }
+                          ].map((item, idx) => (
+                            <div key={idx} className={`strength-item ${item.highlight ? 'highlight' : ''}`}>
+                              <div className="strength-day">{item.label}</div>
+                              <div className="strength-value">{item.value?.toFixed(1)} MPa</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Model Info */}
+                      <div className="model-info">
+                        <span className="model-badge">{pred.modelInfo?.modelUsed || 'Ensemble Model'}</span>
+                        <span className="confidence-badge">{pred.modelInfo?.confidence || 'High'} Confidence</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Pagination */}
@@ -508,24 +554,75 @@ function CementStrengthHistory({ onNavigate }) {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 1rem 1.5rem;
+          padding: 1.25rem 1.5rem;
           background: #f7fafc;
-          border-bottom: 1px solid #e2e8f0;
+        }
+
+        .prediction-info {
+          flex: 1;
         }
 
         .prediction-date {
           color: #4a5568;
           font-weight: 600;
+          font-size: 0.95rem;
+          margin-bottom: 0.5rem;
+        }
+
+        .prediction-summary {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          flex-wrap: wrap;
+          margin-top: 0.5rem;
+        }
+
+        .summary-item {
+          color: #2d3748;
+          font-size: 0.9rem;
+        }
+
+        .summary-item strong {
+          color: #4a5568;
+          font-weight: 600;
+        }
+
+        .summary-divider {
+          color: #cbd5e0;
+        }
+
+        .prediction-actions {
+          display: flex;
+          gap: 0.75rem;
+          align-items: center;
+        }
+
+        .show-more-btn {
+          background: #667eea;
+          color: white;
+          border: none;
+          padding: 0.6rem 1.2rem;
+          border-radius: 6px;
+          cursor: pointer;
+          font-weight: 600;
+          transition: all 0.2s;
+          font-size: 0.9rem;
+        }
+
+        .show-more-btn:hover {
+          background: #5568d3;
         }
 
         .delete-btn {
           background: #fee;
           color: #e53e3e;
           border: none;
-          padding: 0.5rem;
+          padding: 0.6rem 1rem;
           border-radius: 6px;
           cursor: pointer;
           transition: all 0.2s;
+          font-weight: 600;
+          font-size: 0.9rem;
         }
 
         .delete-btn:hover {
@@ -535,6 +632,8 @@ function CementStrengthHistory({ onNavigate }) {
 
         .prediction-body {
           padding: 1.5rem;
+          border-top: 1px solid #e2e8f0;
+          background: white;
         }
 
         .section {
@@ -732,6 +831,27 @@ function CementStrengthHistory({ onNavigate }) {
 
           .filter-controls {
             flex-wrap: wrap;
+          }
+
+          .prediction-header {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 1rem;
+          }
+
+          .prediction-summary {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.5rem;
+          }
+
+          .summary-divider {
+            display: none;
+          }
+
+          .prediction-actions {
+            flex-direction: row;
+            justify-content: flex-end;
           }
 
           .strength-timeline {
