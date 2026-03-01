@@ -11,6 +11,47 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const [selectedDate, setSelectedDate] = useState("");
   const [showHistory, setShowHistory] = useState(false);
 
+  // Sensor data
+  const [sensorData] = useState([
+    { name: "Set 1", values: [60, 60, 60, 60] },
+    { name: "Set 2", values: [49.98, 50.05, 50.1, 49.95] },
+    { name: "Set 3", values: [70.2, 70.18, 70.13, 70.22] },
+    { name: "Set 4", values: [70.03, 69.99, 70.07, 70.01] },
+  ]);
+
+  // Calculate average length from all sensor sets
+  const calculateOverallAverage = () => {
+    const setAverages = sensorData.map((set) => {
+      const sum = set.values.reduce((acc, val) => acc + val, 0);
+      return sum / set.values.length;
+    });
+    const overallAvg =
+      setAverages.reduce((acc, val) => acc + val, 0) / setAverages.length;
+    return overallAvg.toFixed(2);
+  };
+
+  // Form data state
+  const [formData, setFormData] = useState({
+    cubeId: "",
+    cubeMadeDate: "",
+    testDate: "",
+    testingTime: "",
+    predictGrade: "",
+    curingDays: "",
+    appliedLoadKn: "",
+    avgLengthMm: "149.70",
+    avgWidthMm: "149.96",
+  });
+
+  const [savedTestId, setSavedTestId] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [notification, setNotification] = useState({
+    show: false,
+    type: "",
+    message: "",
+  });
+  const [testResult, setTestResult] = useState(null);
+
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -18,6 +59,197 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const getTodayDate = () => {
     const today = new Date();
     return today.toISOString().split("T")[0];
+  };
+
+  const showNotification = (type, message) => {
+    setNotification({ show: true, type, message });
+    setTimeout(() => {
+      setNotification({ show: false, type: "", message: "" });
+    }, 5000);
+  };
+
+  const handleInputChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const saveTestToDatabase = async () => {
+    // Validate required fields
+    const requiredFields = [
+      "cubeId",
+      "cubeMadeDate",
+      "testDate",
+      "testingTime",
+      "predictGrade",
+      "curingDays",
+      "appliedLoadKn",
+      "avgLengthMm",
+      "avgWidthMm",
+    ];
+
+    const missingFields = requiredFields.filter(
+      (field) => !formData[field] || formData[field] === "",
+    );
+
+    if (missingFields.length > 0) {
+      showNotification(
+        "error",
+        `Please fill in all required fields: ${missingFields.join(", ")}`,
+      );
+      return;
+    }
+
+    // Validate numeric fields
+    const curingDays = parseInt(formData.curingDays);
+    const appliedLoadKn = parseFloat(formData.appliedLoadKn);
+    const avgLengthMm = parseFloat(formData.avgLengthMm);
+    const avgWidthMm = parseFloat(formData.avgWidthMm);
+
+    if (isNaN(curingDays) || curingDays < 0) {
+      showNotification("error", "Curing Days must be a valid positive number");
+      return;
+    }
+    if (isNaN(appliedLoadKn) || appliedLoadKn <= 0) {
+      showNotification("error", "Applied Load must be a valid positive number");
+      return;
+    }
+    if (isNaN(avgLengthMm) || avgLengthMm <= 0) {
+      showNotification(
+        "error",
+        "Average Length must be a valid positive number",
+      );
+      return;
+    }
+    if (isNaN(avgWidthMm) || avgWidthMm <= 0) {
+      showNotification(
+        "error",
+        "Average Width must be a valid positive number",
+      );
+      return;
+    }
+
+    setIsSaving(true);
+
+    try {
+      const requestBody = {
+        cubeId: formData.cubeId.trim(),
+        cubeMadeDate: formData.cubeMadeDate,
+        testDate: formData.testDate,
+        testingTime: formData.testingTime,
+        predictGrade: formData.predictGrade.toUpperCase(),
+        curingDays: curingDays,
+        appliedLoadKn: appliedLoadKn,
+        avgLengthMm: avgLengthMm,
+        avgWidthMm: avgWidthMm,
+        cubeGrade: formData.predictGrade.toUpperCase(),
+      };
+
+      console.log("Sending request:", requestBody);
+
+      const response = await fetch("http://localhost:5000/api/strength-tests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      const result = await response.json();
+      console.log("Response:", result);
+
+      // Log detailed validation errors if present
+      if (result.errors && Array.isArray(result.errors)) {
+        console.log("Validation Errors:", result.errors);
+      }
+
+      if (!response.ok) {
+        // Handle validation errors with detailed messages
+        if (result.errors && Array.isArray(result.errors)) {
+          const errorMessages = result.errors
+            .map((err) => `${err.field}: ${err.message}`)
+            .join(", ");
+          throw new Error(`Validation Error: ${errorMessages}`);
+        }
+        const errorMsg =
+          result.error || result.message || `Server error: ${response.status}`;
+        throw new Error(errorMsg);
+      }
+
+      if (result.success) {
+        setSavedTestId(result.data._id);
+        setTestResult(result.data);
+        showNotification(
+          "success",
+          `✓ Test saved successfully! ID: ${result.data._id}`,
+        );
+
+        // If there's a crack analysis result, upload the MASK image
+        if (crackResult && crackResult.mask_base64 && result.data._id) {
+          await uploadCrackImage(result.data._id);
+        } else if ((capturedImage || uploadedImage) && !crackResult) {
+          showNotification(
+            "warning",
+            "⚠️ Please analyze the crack first to save the mask image",
+          );
+        }
+      } else {
+        throw new Error(result.error || "Failed to save test");
+      }
+    } catch (error) {
+      console.error("Error saving test:", error);
+      showNotification("error", `Failed to save test: ${error.message}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const uploadCrackImage = async (testId) => {
+    // Only upload the MASK image from crack detection results
+    if (!crackResult || !crackResult.mask_base64) {
+      console.log("No crack detection mask available to upload");
+      return;
+    }
+
+    try {
+      // Convert base64 mask to blob
+      const base64Data = crackResult.mask_base64;
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: "image/png" });
+
+      const formDataImg = new FormData();
+      formDataImg.append("image", blob, "crack_mask.png");
+
+      const uploadResponse = await fetch(
+        `http://localhost:5000/api/strength-tests/${testId}/image`,
+        {
+          method: "POST",
+          body: formDataImg,
+        },
+      );
+
+      if (uploadResponse.ok) {
+        const result = await uploadResponse.json();
+        console.log("Mask image uploaded:", result.data.crackImageUrl);
+
+        // Update test result with image information
+        setTestResult(result.data);
+
+        showNotification(
+          "success",
+          `✓ Mask image saved to database! Path: /uploads/strength/`,
+        );
+      } else {
+        const errorData = await uploadResponse.json();
+        throw new Error(errorData.error || "Failed to upload mask image");
+      }
+    } catch (error) {
+      console.error("Error uploading mask image:", error);
+      showNotification("error", `Failed to upload mask: ${error.message}`);
+    }
   };
 
   const startCamera = async () => {
@@ -95,7 +327,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
         {
           method: "POST",
           body: formData,
-        }
+        },
       );
 
       if (!apiResponse.ok) throw new Error(`API error: ${apiResponse.status}`);
@@ -105,7 +337,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
     } catch (error) {
       console.error("Error analyzing crack:", error);
       alert(
-        "Failed to analyze crack. Please ensure the backend server is running."
+        "Failed to analyze crack. Please ensure the backend server is running.",
       );
     } finally {
       setIsAnalyzing(false);
@@ -125,6 +357,34 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
   return (
     <div className="min-h-screen w-full bg-gray-50">
+      {/* Notification Banner */}
+      {notification.show && (
+        <div className="fixed top-4 right-4 z-50 animate-slide-in">
+          <div
+            className={`px-6 py-4 rounded-lg shadow-xl border-2 ${
+              notification.type === "success"
+                ? "bg-green-50 border-green-500 text-green-800"
+                : "bg-red-50 border-red-500 text-red-800"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-2xl">
+                {notification.type === "success" ? "✓" : "✗"}
+              </span>
+              <p className="font-semibold">{notification.message}</p>
+              <button
+                onClick={() =>
+                  setNotification({ show: false, type: "", message: "" })
+                }
+                className="ml-4 hover:opacity-70"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Camera Modal */}
       {showCamera && (
         <div className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center p-4">
@@ -167,46 +427,44 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
       <main className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-8 xl:px-12 2xl:px-16 py-6 sm:py-8 lg:py-10">
         {/* Header */}
-        
+
         <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6 sm:mb-8">
-  <div className="flex flex-col items-center justify-center text-center gap-4">
-    
-    {/* Title */}
-    <div>
-      <div className="flex items-center justify-center gap-2 mb-2">
-        <div className="bg-red-600 p-2 rounded-lg">
-          <Camera className="w-6 h-6 text-white" />
+          <div className="flex flex-col items-center justify-center text-center gap-4">
+            {/* Title */}
+            <div>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="bg-red-600 p-2 rounded-lg">
+                  <Camera className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
+                  Compressive Strength & Crack Detection
+                </h1>
+              </div>
+              <p className="text-sm text-gray-600">
+                Real-time monitoring of concrete cube testing with AI-powered
+                crack analysis
+              </p>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex flex-wrap justify-center gap-3">
+              <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm shadow-md">
+                Start New Test
+              </button>
+
+              <button className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm">
+                Generate Report
+              </button>
+
+              <button
+                onClick={() => setShowHistory(true)}
+                className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm"
+              >
+                View History
+              </button>
+            </div>
+          </div>
         </div>
-        <h1 className="text-xl lg:text-2xl font-bold text-gray-900">
-          Compressive Strength & Crack Detection
-        </h1>
-      </div>
-      <p className="text-sm text-gray-600">
-        Real-time monitoring of concrete cube testing with AI-powered crack analysis
-      </p>
-    </div>
-
-    {/* Buttons */}
-    <div className="flex flex-wrap justify-center gap-3">
-      <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm shadow-md">
-        Start New Test
-      </button>
-
-      <button className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm">
-        Generate Report
-      </button>
-
-      <button
-        onClick={() => setShowHistory(true)}
-        className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm"
-      >
-        View History
-      </button>
-    </div>
-
-  </div>
-</div>
-
 
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
           {/* Left Column: Sensor Data */}
@@ -214,38 +472,150 @@ export default function CompressiveStrengthDetail({ onBack }) {
             {/* All Sensor Sets */}
 
             <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 border-t-4 border-red-600">
-              <h3 className="text-base font-bold text-gray-900 mb-3">
-                Detailed Sensor Readings
-              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold text-gray-900">
+                  Detailed Sensor Readings
+                </h3>
+                <button
+                  onClick={() => {
+                    // Calculate: avgLength = 270 - (Set1 + Set3), avgWidth = 270 - (Set2 + Set4)
+                    const set1Avg =
+                      sensorData[0].values.reduce((acc, val) => acc + val, 0) /
+                      sensorData[0].values.length;
+                    const set2Avg =
+                      sensorData[1].values.reduce((acc, val) => acc + val, 0) /
+                      sensorData[1].values.length;
+                    const set3Avg =
+                      sensorData[2].values.reduce((acc, val) => acc + val, 0) /
+                      sensorData[2].values.length;
+                    const set4Avg =
+                      sensorData[3].values.reduce((acc, val) => acc + val, 0) /
+                      sensorData[3].values.length;
+
+                    const avgLength = 270 - (set1Avg + set3Avg);
+                    const avgWidth = 270 - (set2Avg + set4Avg);
+
+                    handleInputChange("avgLengthMm", avgLength.toFixed(2));
+                    handleInputChange("avgWidthMm", avgWidth.toFixed(2));
+                    showNotification(
+                      "success",
+                      "Test started! Sensor data collected successfully.",
+                    );
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-md transition flex items-center gap-2"
+                >
+                  <RotateCw className="w-4 h-4" />
+                  Start Test
+                </button>
+              </div>
               <div className="space-y-3">
-                {["Set 1", "Set 2", "Set 3", "Set 4"].map((set, index) => (
-                  <div
-                    key={index}
-                    className="border border-gray-200 rounded-xl p-3"
-                  >
-                    <h4 className="text-xs sm:text-sm font-bold text-gray-800 mb-2">
-                      {set} Sensor Data
-                    </h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
-                      <div className="bg-gray-50 rounded-lg p-2 text-center">
-                        <p className="text-xs text-gray-600">Length 1</p>
-                        <p className="text-sm text-gray-900">150.12 mm</p>
+                {sensorData.map((set, index) => {
+                  const setAverage = (
+                    set.values.reduce((acc, val) => acc + val, 0) /
+                    set.values.length
+                  ).toFixed(2);
+                  return (
+                    <div
+                      key={index}
+                      className="border border-gray-200 rounded-xl p-3"
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="text-xs sm:text-sm font-bold text-gray-800">
+                          {set.name} Sensor Data
+                        </h4>
+                        <div className="bg-green-100 px-2 py-1 rounded-md">
+                          <p className="text-[10px] text-green-700 font-semibold">
+                            Avg: {setAverage} mm
+                          </p>
+                        </div>
                       </div>
-                      <div className="bg-gray-50 rounded-lg p-2 text-center">
-                        <p className="text-xs text-gray-600">Length 2</p>
-                        <p className="text-sm text-gray-900">150.08 mm</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-2 text-center">
-                        <p className="text-xs text-gray-600">Length 3</p>
-                        <p className="text-sm text-gray-900">150.15 mm</p>
-                      </div>
-                      <div className="bg-gray-50 rounded-lg p-2 text-center">
-                        <p className="text-xs text-gray-600">Length 4</p>
-                        <p className="text-sm text-gray-900">150.11 mm</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 sm:gap-2">
+                        {set.values.map((value, idx) => (
+                          <div
+                            key={idx}
+                            className="bg-gray-50 rounded-lg p-2 text-center"
+                          >
+                            <p className="text-xs text-gray-600">
+                              Length {idx + 1}
+                            </p>
+                            <p className="text-sm text-gray-900">{value} mm</p>
+                          </div>
+                        ))}
                       </div>
                     </div>
+                  );
+                })}
+
+                {/* Overall Average Display */}
+                <div className="bg-gradient-to-r from-green-50 to-blue-50 border-2 border-green-300 rounded-xl p-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <svg
+                      className="w-5 h-5 text-green-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                    <h4 className="text-sm font-bold text-gray-800">
+                      Calculated Dimensions (270mm - Sum)
+                    </h4>
                   </div>
-                ))}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-white rounded-lg p-3 border-2 border-green-300">
+                      <p className="text-xs text-gray-600 mb-1">
+                        Avg Length (Set 1+3)
+                      </p>
+                      <p className="text-lg font-bold text-green-900">
+                        {(() => {
+                          const set1Avg =
+                            sensorData[0].values.reduce(
+                              (acc, val) => acc + val,
+                              0,
+                            ) / sensorData[0].values.length;
+                          const set3Avg =
+                            sensorData[2].values.reduce(
+                              (acc, val) => acc + val,
+                              0,
+                            ) / sensorData[2].values.length;
+                          const avgLength = 270 - (set1Avg + set3Avg);
+                          return avgLength.toFixed(2);
+                        })()}{" "}
+                        mm
+                      </p>
+                    </div>
+                    <div className="bg-white rounded-lg p-3 border-2 border-blue-300">
+                      <p className="text-xs text-gray-600 mb-1">
+                        Avg Width (Set 2+4)
+                      </p>
+                      <p className="text-lg font-bold text-blue-900">
+                        {(() => {
+                          const set2Avg =
+                            sensorData[1].values.reduce(
+                              (acc, val) => acc + val,
+                              0,
+                            ) / sensorData[1].values.length;
+                          const set4Avg =
+                            sensorData[3].values.reduce(
+                              (acc, val) => acc + val,
+                              0,
+                            ) / sensorData[3].values.length;
+                          const avgWidth = 270 - (set2Avg + set4Avg);
+                          return avgWidth.toFixed(2);
+                        })()}{" "}
+                        mm
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-600 mt-2 text-center">
+                    Length = 270 - (Set1 + Set3) • Width = 270 - (Set2 + Set4)
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -256,55 +626,202 @@ export default function CompressiveStrengthDetail({ onBack }) {
               </h3>
               <div className="space-y-4">
                 <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                    Cube ID *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.cubeId}
+                    onChange={(e) =>
+                      handleInputChange("cubeId", e.target.value)
+                    }
+                    placeholder="e.g. C-2026-001"
+                    className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                  />
+                </div>
+
+                <div>
                   <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 mb-2">
                     <Calendar className="w-4 h-4 text-red-600" />
-                    Select Test Date
+                    Cube Made Date *
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="date"
-                      value={selectedDate}
-                      min={getTodayDate()}
-                      onChange={(e) => setSelectedDate(e.target.value)}
-                      className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
-                    />
-                    <button className="bg-red-600 hover:bg-red-700 text-white w-24 py-2 rounded-lg text-sm font-semibold transition">
-                      Save
-                    </button>
-                  </div>
+                  <input
+                    type="date"
+                    value={formData.cubeMadeDate}
+                    onChange={(e) =>
+                      handleInputChange("cubeMadeDate", e.target.value)
+                    }
+                    max={getTodayDate()}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                  />
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-gray-700 mb-2 block">
-                    Applied Load (kN)
+                    Testing Time *
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. 450.75"
-                      className="flex-1 border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
-                    />
-                    <button className="bg-red-600 hover:bg-red-700 text-white w-16 sm:w-20 lg:w-24 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex-shrink-0">
-                      Apply
-                    </button>
-                  </div>
+                  <input
+                    type="time"
+                    value={formData.testingTime}
+                    onChange={(e) =>
+                      handleInputChange("testingTime", e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                  />
                 </div>
 
                 <div>
                   <label className="text-xs font-semibold text-gray-700 mb-2 block">
-                    Curing Days
+                    Predict Grade *
                   </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      placeholder="e.g. 7 or 28"
-                      className="flex-1 border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
-                    />
-                    <button className="bg-red-600 hover:bg-red-700 text-white w-16 sm:w-20 lg:w-24 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition flex-shrink-0">
-                      Save
-                    </button>
-                  </div>
+                  <select
+                    value={formData.predictGrade}
+                    onChange={(e) =>
+                      handleInputChange("predictGrade", e.target.value)
+                    }
+                    className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                  >
+                    <option value="">Select Grade</option>
+                    <option value="M10">M10</option>
+                    <option value="M15">M15</option>
+                    <option value="M20">M20</option>
+                    <option value="M25">M25</option>
+                    <option value="M30">M30</option>
+                    <option value="M35">M35</option>
+                    <option value="M40">M40</option>
+                    <option value="M45">M45</option>
+                    <option value="M50">M50</option>
+                  </select>
                 </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 flex items-center gap-2 mb-2">
+                    <Calendar className="w-4 h-4 text-red-600" />
+                    Test Date *
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.testDate}
+                    onChange={(e) =>
+                      handleInputChange("testDate", e.target.value)
+                    }
+                    min={formData.cubeMadeDate || getTodayDate()}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                    Applied Load (kN) *
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={formData.appliedLoadKn}
+                    onChange={(e) =>
+                      handleInputChange("appliedLoadKn", e.target.value)
+                    }
+                    placeholder="e.g. 450.75"
+                    className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-gray-700 mb-2 block">
+                    Curing Days *
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={formData.curingDays}
+                    onChange={(e) =>
+                      handleInputChange("curingDays", e.target.value)
+                    }
+                    placeholder="e.g. 7 or 28"
+                    className="w-full border border-gray-300 rounded-lg px-2 sm:px-3 py-1.5 sm:py-2 text-xs sm:text-sm focus:ring-2 focus:ring-red-500 focus:border-red-500 transition"
+                  />
+                </div>
+
+                {/* Sensor-Calculated Dimensions (Read-Only) */}
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 sm:p-4">
+                  <h4 className="text-xs font-bold text-blue-800 mb-3 flex items-center gap-2">
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
+                      />
+                    </svg>
+                    Sensor Measurements (Auto-Calculated)
+                  </h4>
+
+                  <div className="grid grid-cols-3 gap-2 sm:gap-3">
+                    <div className="bg-white rounded-lg p-2 sm:p-3 text-center border border-blue-200">
+                      <p className="text-[10px] sm:text-xs text-gray-600 mb-1">
+                        Avg Length
+                      </p>
+                      <p className="text-sm sm:text-base font-bold text-gray-900">
+                        {formData.avgLengthMm || "0"}
+                      </p>
+                      <p className="text-[10px] text-gray-500">mm</p>
+                    </div>
+
+                    <div className="bg-white rounded-lg p-2 sm:p-3 text-center border border-blue-200">
+                      <p className="text-[10px] sm:text-xs text-gray-600 mb-1">
+                        Avg Width
+                      </p>
+                      <p className="text-sm sm:text-base font-bold text-gray-900">
+                        {formData.avgWidthMm || "0"}
+                      </p>
+                      <p className="text-[10px] text-gray-500">mm</p>
+                    </div>
+
+                    <div className="bg-blue-100 rounded-lg p-2 sm:p-3 text-center border-2 border-blue-300">
+                      <p className="text-[10px] sm:text-xs text-blue-700 mb-1 font-semibold">
+                        Avg Area
+                      </p>
+                      <p className="text-sm sm:text-base font-bold text-blue-900">
+                        {(
+                          parseFloat(formData.avgLengthMm || 0) *
+                          parseFloat(formData.avgWidthMm || 0)
+                        ).toFixed(2)}
+                      </p>
+                      <p className="text-[10px] text-blue-600">mm²</p>
+                    </div>
+                  </div>
+
+                  <p className="text-[10px] text-blue-700 mt-2 text-center">
+                    ℹ️ These values are automatically calculated from sensor
+                    readings
+                  </p>
+                </div>
+
+                <button
+                  onClick={saveTestToDatabase}
+                  disabled={isSaving}
+                  className="w-full bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white font-bold py-3 rounded-xl transition shadow-lg text-sm sm:text-base"
+                >
+                  {isSaving
+                    ? "Saving..."
+                    : savedTestId
+                      ? "✓ Update Test Record"
+                      : "💾 Save Test to Database"}
+                </button>
+
+                {crackResult && (
+                  <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                    <p className="text-[10px] text-blue-700 text-center">
+                      ✓ Crack mask ready - will be saved to database on save
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -314,89 +831,162 @@ export default function CompressiveStrengthDetail({ onBack }) {
                 Average Test Data
               </h3>
 
-              {/* Main Focus: Compressive Strength */}
-              <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-lg border-2 border-red-500 mb-3 sm:mb-4">
-                <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
-                  <span className="text-[10px] sm:text-xs font-semibold text-red-600 uppercase tracking-wide">
-                    Compressive Strength Test
-                  </span>
-                  <span className="bg-green-100 text-green-700 text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 rounded-full flex-shrink-0">
-                    ✓ Passed
-                  </span>
-                </div>
+              {testResult ? (
+                <>
+                  {/* Main Focus: Compressive Strength */}
+                  <div className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 lg:p-6 shadow-lg border-2 border-red-500 mb-3 sm:mb-4">
+                    <div className="flex items-center justify-between gap-2 mb-3 sm:mb-4">
+                      <span className="text-[10px] sm:text-xs font-semibold text-red-600 uppercase tracking-wide">
+                        Compressive Strength Test
+                      </span>
+                      <span
+                        className={`${
+                          testResult.status === "Passed"
+                            ? "bg-green-100 text-green-700"
+                            : "bg-red-100 text-red-700"
+                        } text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 rounded-full flex-shrink-0`}
+                      >
+                        {testResult.status === "Passed"
+                          ? "✓ Passed"
+                          : "✗ Failed"}
+                      </span>
+                    </div>
 
-                <div className="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4">
-                  <div className="text-4xl sm:text-5xl lg:text-6xl font-black text-red-600">
-                    20.02
-                  </div>
-                  <div className="text-xl sm:text-2xl font-bold text-gray-600 mb-0.5 sm:mb-1 lg:mb-2">
-                    MPa
-                  </div>
-                </div>
+                    <div className="flex items-end gap-2 sm:gap-3 mb-3 sm:mb-4">
+                      <div className="text-4xl sm:text-5xl lg:text-6xl font-black text-red-600">
+                        {testResult.compressiveStrengthMpa}
+                      </div>
+                      <div className="text-xl sm:text-2xl font-bold text-gray-600 mb-0.5 sm:mb-1 lg:mb-2">
+                        MPa
+                      </div>
+                    </div>
 
-                <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                  <div className="bg-red-50 rounded-lg p-2 sm:p-3 border border-red-200">
-                    <p className="text-[10px] sm:text-xs text-gray-600 mb-1">
-                      Cube Grade
-                    </p>
-                    <p className="text-base sm:text-lg lg:text-xl font-bold text-red-700">
-                      M20
-                    </p>
+                    <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                      <div className="bg-red-50 rounded-lg p-2 sm:p-3 border border-red-200">
+                        <p className="text-[10px] sm:text-xs text-gray-600 mb-1">
+                          Cube Grade
+                        </p>
+                        <p className="text-base sm:text-lg lg:text-xl font-bold text-red-700">
+                          {testResult.cubeGrade}
+                        </p>
+                      </div>
+                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3 border border-gray-200">
+                        <p className="text-[10px] sm:text-xs text-gray-600 mb-1">
+                          Test Date
+                        </p>
+                        <p className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
+                          {new Date(testResult.testDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                  <div className="bg-gray-50 rounded-lg p-2 sm:p-3 border border-gray-200">
-                    <p className="text-[10px] sm:text-xs text-gray-600 mb-1">
-                      Test Date
-                    </p>
-                    <p className="text-base sm:text-lg lg:text-xl font-bold text-gray-800">
-                      Today
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Other Parameters */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
-                <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200">
-                  <p className="text-[10px] sm:text-xs text-gray-600">
-                    Avg. Length
-                  </p>
-                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
-                    150.12 mm
+                  {/* Other Parameters */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                    <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200">
+                      <p className="text-[10px] sm:text-xs text-gray-600">
+                        Avg. Length
+                      </p>
+                      <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
+                        {testResult.avgLengthMm} mm
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200">
+                      <p className="text-[10px] sm:text-xs text-gray-600">
+                        Avg. Width
+                      </p>
+                      <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
+                        {testResult.avgWidthMm} mm
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200">
+                      <p className="text-[10px] sm:text-xs text-gray-600">
+                        Avg. Area
+                      </p>
+                      <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
+                        {testResult.avgAreaMm2} mm²
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200">
+                      <p className="text-[10px] sm:text-xs text-gray-600">
+                        Curing Days
+                      </p>
+                      <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
+                        {testResult.curingDays}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 col-span-2 sm:col-span-2">
+                      <p className="text-[10px] sm:text-xs text-gray-600">
+                        Applied Load
+                      </p>
+                      <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
+                        {testResult.appliedLoadKn} kN
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Saved Image Information */}
+                  {testResult.crackImageUrl && (
+                    <div className="mt-4 bg-green-50 border-2 border-green-200 rounded-xl p-3 sm:p-4">
+                      <div className="flex items-start gap-2 mb-2">
+                        <svg
+                          className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                          />
+                        </svg>
+                        <div className="flex-1 min-w-0">
+                          <h4 className="text-xs font-bold text-green-800 mb-1">
+                            🎭 Crack Segmentation Mask Saved to Database
+                          </h4>
+                          <p className="text-[10px] text-gray-600 mb-2">
+                            Mask image stored in:{" "}
+                            <code className="bg-green-100 px-1 py-0.5 rounded text-green-700">
+                              /uploads/strength/
+                            </code>
+                          </p>
+                          <div className="bg-white rounded-lg p-2 border border-green-300">
+                            <p className="text-[10px] text-gray-500 mb-1">
+                              Mask Image URL:
+                            </p>
+                            <a
+                              href={testResult.crackImageUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-blue-600 hover:text-blue-800 underline break-all"
+                            >
+                              {testResult.crackImageUrl}
+                            </a>
+                          </div>
+                          {testResult.imageUploadedAt && (
+                            <p className="text-[10px] text-gray-500 mt-2">
+                              Uploaded:{" "}
+                              {new Date(
+                                testResult.imageUploadedAt,
+                              ).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500 mb-2">No test data available</p>
+                  <p className="text-sm text-gray-400">
+                    Fill in the test parameters and click "Save Test to
+                    Database"
                   </p>
                 </div>
-                <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200">
-                  <p className="text-[10px] sm:text-xs text-gray-600">
-                    Avg. Width
-                  </p>
-                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
-                    149.98 mm
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200">
-                  <p className="text-[10px] sm:text-xs text-gray-600">
-                    Avg. Area
-                  </p>
-                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
-                    229.98 mm²
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200">
-                  <p className="text-[10px] sm:text-xs text-gray-600">
-                    Curing Days
-                  </p>
-                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
-                    7
-                  </p>
-                </div>
-                <div className="bg-gray-50 rounded-lg p-2 sm:p-3 text-center border border-gray-200 col-span-2 sm:col-span-2">
-                  <p className="text-[10px] sm:text-xs text-gray-600">
-                    Applied Load
-                  </p>
-                  <p className="text-sm sm:text-base lg:text-lg font-bold text-gray-900 mt-1">
-                    450.75 kN
-                  </p>
-                </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -406,9 +996,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
               <h2 className="text-sm sm:text-base font-bold text-gray-900">
                 AI Crack Detection
               </h2>
-              <span className="bg-red-100 text-red-600 text-xs font-semibold px-3 py-1 rounded-full">
-                AI Powered
-              </span>
+              
             </div>
 
             {uploadedImage || capturedImage ? (
