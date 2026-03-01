@@ -3,6 +3,7 @@ import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import CompressiveStrengthDetail from "./pages/CompressiveStrengthDetail";
 import CementStrengthDetail from "./pages/CementStrengthDetail";
+import CementStrengthHistory from "./pages/CementStrengthHistory";
 import RawMealPages from "./pages/RawMealPages";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
@@ -34,7 +35,9 @@ export default function App() {
           <CompressiveStrengthDetail onBack={() => setCurrentPage("home")} />
         );
       case "cement-strength":
-        return <CementStrengthDetail />;
+        return <CementStrengthDetail onNavigate={setCurrentPage} />;
+      case "cement-strength-history":
+        return <CementStrengthHistory onNavigate={setCurrentPage} />;
       case "raw-meal":
         return <RawMealPages />;
       case "settings":

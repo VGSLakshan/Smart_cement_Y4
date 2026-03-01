@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ClipboardList, FileEdit, Timer, Beaker, Rocket, RotateCcw, AlertTriangle, CheckCircle, BarChart3, TrendingUp, Award, Star, Bot, Target, Settings } from 'lucide-react';
+import { ClipboardList, FileEdit, Timer, Beaker, Rocket, RotateCcw, AlertTriangle, CheckCircle, BarChart3, TrendingUp, Award, Star, Bot, Target, Settings, History } from 'lucide-react';
 import '../App.css';
 
-function CementStrengthPrediction() {
+function CementStrengthPrediction({ onNavigate }) {
   const [formData, setFormData] = useState({
     initial_min: '',
     final_min: '',
@@ -31,6 +31,61 @@ function CementStrengthPrediction() {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Save prediction to MongoDB
+  const savePredictionToDatabase = async (predictionData, inputData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/cement-predictions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputParameters: {
+            grinding: {
+              initial_min: parseFloat(inputData.initial_min),
+              final_min: parseFloat(inputData.final_min),
+              residue_45um: parseFloat(inputData.residue_45um),
+              fineness: parseFloat(inputData.fineness),
+              loi: parseFloat(inputData.loi)
+            },
+            chemicalComposition: {
+              sio2: parseFloat(inputData.sio2),
+              al2o3: parseFloat(inputData.al2o3),
+              fe2o3: parseFloat(inputData.fe2o3),
+              cao: parseFloat(inputData.cao),
+              mgo: parseFloat(inputData.mgo),
+              so3: parseFloat(inputData.so3),
+              k2o: parseFloat(inputData.k2o),
+              na2o: parseFloat(inputData.na2o),
+              cl: parseFloat(inputData.cl)
+            }
+          },
+          predictions: {
+            strength_1d: predictionData.predictions.strength_1d,
+            strength_2d: predictionData.predictions.strength_2d,
+            strength_7d: predictionData.predictions.strength_7d,
+            strength_28d: predictionData.predictions.strength_28d,
+            strength_56d: predictionData.predictions.strength_56d
+          },
+          modelInfo: {
+            modelUsed: predictionData.predictions.model_used || "Ensemble (XGBoost + LightGBM)",
+            confidence: predictionData.predictions.confidence || "High",
+            engineeredFeaturesCount: predictionData.engineered_features_count || 0
+          }
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Prediction saved to database:', result.data._id);
+        return result.data._id;
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to save prediction to database:', error.message);
+      // Don't throw error - saving to DB is optional, prediction still works
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -62,6 +117,9 @@ function CementStrengthPrediction() {
       const data = await response.json();
       setPrediction(data);
       setShowSuccess(true);
+      
+      // Save to MongoDB database
+      await savePredictionToDatabase(data, formData);
       
       // Scroll to results
       setTimeout(() => {
@@ -124,6 +182,14 @@ function CementStrengthPrediction() {
           <p className="description">
             Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using state-of-the-art machine learning algorithms
           </p>
+          
+          <button 
+            onClick={() => onNavigate && onNavigate('cement-strength-history')}
+            className="btn-view-history"
+            type="button"
+          >
+            <History size={20} /> View Prediction History
+          </button>
           
         </div>
       </div>
@@ -596,6 +662,30 @@ function CementStrengthPrediction() {
           max-width: 700px;
           margin: 0 auto 1.5rem;
           line-height: 1.6;
+        }
+
+        .btn-view-history {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.6rem;
+          padding: 0.9rem 1.8rem;
+          background: white;
+          color: #667eea;
+          border: 2px solid #667eea;
+          border-radius: 12px;
+          font-size: 1rem;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          margin-top: 1rem;
+          box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .btn-view-history:hover {
+          background: #667eea;
+          color: white;
+          transform: translateY(-2px);
+          box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
 
         .model-badges {
