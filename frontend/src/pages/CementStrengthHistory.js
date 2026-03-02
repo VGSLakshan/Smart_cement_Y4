@@ -63,7 +63,7 @@ function CementStrengthHistory({ onNavigate }) {
 
   // Delete prediction
   const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this prediction?')) {
+    if (!window.confirm('Are you sure you want to delete this prediction? This action cannot be undone.')) {
       return;
     }
 
