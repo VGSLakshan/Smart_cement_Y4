@@ -7,6 +7,8 @@ import CementStrengthHistory from "./pages/CementStrengthHistory";
 import RawMealPages from "./pages/RawMealPages";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
+import ReportSelection from "./pages/ReportSelection";
+import ReportGeneration from "./pages/ReportGeneration";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -40,6 +42,10 @@ export default function App() {
         return <CementStrengthHistory onNavigate={setCurrentPage} />;
       case "raw-meal":
         return <RawMealPages />;
+      case "reports":
+        return <ReportSelection onNavigate={setCurrentPage} />;
+      case "cement-strength-reports":
+        return <ReportGeneration onNavigate={setCurrentPage} />;
       case "settings":
         return <Settings />;
       default:

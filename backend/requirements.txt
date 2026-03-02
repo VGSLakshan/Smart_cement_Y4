@@ -31,6 +31,12 @@ pydantic==2.5.0
 pydantic-settings==2.1.0
 
 # ========================================
+# Database & Report Generation
+# ========================================
+pymongo>=4.6.0
+reportlab>=4.0.0
+
+# ========================================
 # Configuration & Environment
 # ========================================
 python-dotenv==1.0.0
