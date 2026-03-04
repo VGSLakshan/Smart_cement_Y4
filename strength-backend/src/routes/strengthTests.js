@@ -355,4 +355,80 @@ router.delete("/:id", async (req, res, next) => {
   }
 });
 
+/**
+ * @route   PUT /api/strength-tests/:id
+ * @desc    Update a strength test record
+ * @access  Public
+ */
+router.put("/:id", async (req, res, next) => {
+  try {
+    const { id } = req.params;
+
+    // Validate MongoDB ObjectId
+    if (!id.match(/^[0-9a-fA-F]{24}$/)) {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid test ID format",
+      });
+    }
+
+    const strengthTest = await StrengthTest.findById(id);
+
+    if (!strengthTest) {
+      return res.status(404).json({
+        success: false,
+        error: "Strength test record not found",
+      });
+    }
+
+    // Extract updatable fields from request body
+    const {
+      cubeId,
+      cubeMadeDate,
+      testDate,
+      testingTime,
+      predictGrade,
+      curingDays,
+      appliedLoadKn,
+      avgLengthMm,
+      avgWidthMm,
+      cubeGrade,
+      compressiveStrengthMpa,
+      avgAreaMm2,
+      status,
+    } = req.body;
+
+    // Update fields if provided
+    if (cubeId !== undefined) strengthTest.cubeId = cubeId;
+    if (cubeMadeDate !== undefined) strengthTest.cubeMadeDate = cubeMadeDate;
+    if (testDate !== undefined) strengthTest.testDate = testDate;
+    if (testingTime !== undefined) strengthTest.testingTime = testingTime;
+    if (predictGrade !== undefined)
+      strengthTest.predictGrade = predictGrade.toUpperCase();
+    if (curingDays !== undefined) strengthTest.curingDays = curingDays;
+    if (appliedLoadKn !== undefined) strengthTest.appliedLoadKn = appliedLoadKn;
+    if (avgLengthMm !== undefined) strengthTest.avgLengthMm = avgLengthMm;
+    if (avgWidthMm !== undefined) strengthTest.avgWidthMm = avgWidthMm;
+    if (cubeGrade !== undefined)
+      strengthTest.cubeGrade = cubeGrade.toUpperCase();
+
+    // Allow manual override of calculated fields
+    if (compressiveStrengthMpa !== undefined)
+      strengthTest.compressiveStrengthMpa = compressiveStrengthMpa;
+    if (avgAreaMm2 !== undefined) strengthTest.avgAreaMm2 = avgAreaMm2;
+    if (status !== undefined) strengthTest.status = status;
+
+    // Save will trigger pre-save middleware to recalculate if needed
+    await strengthTest.save();
+
+    res.status(200).json({
+      success: true,
+      data: strengthTest,
+      message: "Strength test record updated successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 module.exports = router;
