@@ -1,0 +1,112 @@
+{
+  "examples": [
+    {
+      "description": "Standard M20 concrete cube test - Passed",
+      "data": {
+        "cubeId": "CUBE-2026-001",
+        "cubeMadeDate": "2026-02-01",
+        "testDate": "2026-02-25",
+        "testingTime": "09:30 AM",
+        "predictGrade": "M20",
+        "curingDays": 24,
+        "appliedLoadKn": 450,
+        "avgLengthMm": 150,
+        "avgWidthMm": 150,
+        "cubeGrade": "M20"
+      },
+      "expectedResults": {
+        "avgAreaMm2": 22500,
+        "compressiveStrengthMpa": 20,
+        "status": "Passed"
+      }
+    },
+    {
+      "description": "M25 concrete cube test - Passed",
+      "data": {
+        "cubeId": "CUBE-2026-002",
+        "cubeMadeDate": "2026-01-28",
+        "testDate": "2026-02-25",
+        "testingTime": "10:15 AM",
+        "predictGrade": "M25",
+        "curingDays": 28,
+        "appliedLoadKn": 562.5,
+        "avgLengthMm": 150,
+        "avgWidthMm": 150,
+        "cubeGrade": "M25"
+      },
+      "expectedResults": {
+        "avgAreaMm2": 22500,
+        "compressiveStrengthMpa": 25,
+        "status": "Passed"
+      }
+    },
+    {
+      "description": "M30 concrete cube test - Failed (low strength)",
+      "data": {
+        "cubeId": "CUBE-2026-003",
+        "cubeMadeDate": "2026-02-05",
+        "testDate": "2026-02-25",
+        "testingTime": "11:00 AM",
+        "predictGrade": "M30",
+        "curingDays": 20,
+        "appliedLoadKn": 600,
+        "avgLengthMm": 150,
+        "avgWidthMm": 150,
+        "cubeGrade": "M30"
+      },
+      "expectedResults": {
+        "avgAreaMm2": 22500,
+        "compressiveStrengthMpa": 26.67,
+        "status": "Failed",
+        "note": "Failed because 26.67 MPa < 30 MPa threshold for M30"
+      }
+    },
+    {
+      "description": "M15 concrete cube test - Passed",
+      "data": {
+        "cubeId": "CUBE-2026-004",
+        "cubeMadeDate": "2026-02-10",
+        "testDate": "2026-02-25",
+        "testingTime": "02:30 PM",
+        "predictGrade": "M15",
+        "curingDays": 15,
+        "appliedLoadKn": 360,
+        "avgLengthMm": 150,
+        "avgWidthMm": 150,
+        "cubeGrade": "M15"
+      },
+      "expectedResults": {
+        "avgAreaMm2": 22500,
+        "compressiveStrengthMpa": 16,
+        "status": "Passed"
+      }
+    },
+    {
+      "description": "M40 high-strength concrete - Passed",
+      "data": {
+        "cubeId": "CUBE-2026-005",
+        "cubeMadeDate": "2026-01-20",
+        "testDate": "2026-02-25",
+        "testingTime": "03:45 PM",
+        "predictGrade": "M40",
+        "curingDays": 36,
+        "appliedLoadKn": 950,
+        "avgLengthMm": 150,
+        "avgWidthMm": 150,
+        "cubeGrade": "M40"
+      },
+      "expectedResults": {
+        "avgAreaMm2": 22500,
+        "compressiveStrengthMpa": 42.22,
+        "status": "Passed"
+      }
+    }
+  ],
+  "curlCommands": {
+    "createTest": "curl -X POST http://localhost:5000/api/strength-tests -H \"Content-Type: application/json\" -d '{\"cubeId\":\"CUBE-2026-001\",\"cubeMadeDate\":\"2026-02-01\",\"testDate\":\"2026-02-25\",\"testingTime\":\"09:30 AM\",\"predictGrade\":\"M20\",\"curingDays\":24,\"appliedLoadKn\":450,\"avgLengthMm\":150,\"avgWidthMm\":150,\"cubeGrade\":\"M20\"}'",
+    "getAllTests": "curl http://localhost:5000/api/strength-tests",
+    "getTestById": "curl http://localhost:5000/api/strength-tests/{id}",
+    "uploadImage": "curl -X POST http://localhost:5000/api/strength-tests/{id}/image -F \"image=@path/to/crack_image.jpg\"",
+    "filterByStatus": "curl http://localhost:5000/api/strength-tests?status=Passed&page=1&limit=10"
+  }
+}
