@@ -2,15 +2,30 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const http = require("http");
+const { Server } = require("socket.io");
 const connectDB = require("./config/db");
 const strengthTestsRouter = require("./routes/strengthTests");
 const errorHandler = require("./middleware/errorHandler");
+const mqttService = require("./services/mqttService");
 
 // Initialize Express app
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.IO with CORS
+const io = new Server(server, {
+  cors: {
+    origin: "*", // In production, specify your frontend URL
+    methods: ["GET", "POST"],
+  },
+});
 
 // Connect to MongoDB
 connectDB();
+
+// Initialize MQTT Service with Socket.IO
+mqttService.initialize(io);
 
 // Middleware
 app.use(cors()); // Enable CORS for all routes
@@ -22,6 +37,45 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // API Routes
 app.use("/api/strength-tests", strengthTestsRouter);
+
+// MQTT Control Routes
+app.post("/api/sensor/start-test", (req, res) => {
+  try {
+    const result = mqttService.startTest();
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message,
+    });
+  }
+});
+
+app.get("/api/sensor/data", (req, res) => {
+  res.status(200).json({
+    success: true,
+    data: mqttService.getSensorData(),
+  });
+});
+
+app.get("/api/sensor/status", (req, res) => {
+  res.status(200).json({
+    success: true,
+    ...mqttService.getStatus(),
+  });
+});
+
+// Socket.IO connection handling
+io.on("connection", (socket) => {
+  console.log(`🔌 Client connected: ${socket.id}`);
+
+  // Send current sensor data to newly connected client
+  socket.emit("initialData", mqttService.getSensorData());
+
+  socket.on("disconnect", () => {
+    console.log(`🔌 Client disconnected: ${socket.id}`);
+  });
+});
 
 // Health check endpoint
 app.get("/health", (req, res) => {
@@ -67,7 +121,7 @@ app.use(errorHandler);
 
 // Start server
 const PORT = process.env.PORT || 5000;
-const server = app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log("");
   console.log("=".repeat(50));
   console.log("🚀 Cement Strength Test API Server");
@@ -75,6 +129,8 @@ const server = app.listen(PORT, () => {
   console.log(`📡 Server running on port: ${PORT}`);
   console.log(`🌐 URL: http://localhost:${PORT}`);
   console.log(`🏥 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔌 Socket.IO enabled`);
+  console.log(`📱 MQTT enabled`);
   console.log(`📁 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log("=".repeat(50));
   console.log("");
@@ -83,6 +139,7 @@ const server = app.listen(PORT, () => {
 // Graceful shutdown
 process.on("SIGTERM", () => {
   console.log("👋 SIGTERM signal received: closing HTTP server");
+  mqttService.close();
   server.close(() => {
     console.log("✅ HTTP server closed");
     process.exit(0);
@@ -91,6 +148,7 @@ process.on("SIGTERM", () => {
 
 process.on("SIGINT", () => {
   console.log("\n👋 SIGINT signal received: closing HTTP server");
+  mqttService.close();
   server.close(() => {
     console.log("✅ HTTP server closed");
     process.exit(0);
