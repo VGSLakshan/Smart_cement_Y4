@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ClipboardList, FileEdit, Timer, Beaker, Rocket, RotateCcw, AlertTriangle, CheckCircle, BarChart3, TrendingUp, Award, Star, Bot, Target, Settings } from 'lucide-react';
+import { ClipboardList, FileEdit, Timer, Beaker, Rocket, RotateCcw, AlertTriangle, CheckCircle, BarChart3, TrendingUp, Award, Star, Bot, Target, Settings, History } from 'lucide-react';
 import '../App.css';
 
-function CementStrengthPrediction() {
+function CementStrengthPrediction({ onNavigate }) {
   const [formData, setFormData] = useState({
     initial_min: '',
     final_min: '',
@@ -24,6 +24,54 @@ function CementStrengthPrediction() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
+  const [cementGrade, setCementGrade] = useState('OPC43'); // Default grade
+
+  // Cement grade standards (ASTM/EN)
+  const gradeStandards = {
+    OPC33: { name: 'OPC 33 Grade', min28d: 33, min7d: 16, min2d: 10 },
+    OPC43: { name: 'OPC 43 Grade', min28d: 43, min7d: 23, min2d: 13 },
+    OPC53: { name: 'OPC 53 Grade', min28d: 53, min7d: 27, min2d: 16 }
+  };
+
+  // Evaluate quality status based on predicted strength
+  const evaluateQuality = (predictedStrength, day, grade) => {
+    const standard = gradeStandards[grade];
+    if (!standard) return { status: 'unknown', color: 'gray', message: 'Unknown grade' };
+
+    let minRequired = 0;
+    if (day === '28D') minRequired = standard.min28d;
+    else if (day === '7D') minRequired = standard.min7d;
+    else if (day === '2D') minRequired = standard.min2d;
+    else return { status: 'n/a', color: 'gray', message: 'No standard for this day' };
+
+    const margin = ((predictedStrength - minRequired) / minRequired) * 100;
+
+    if (predictedStrength >= minRequired + 5) {
+      return {
+        status: 'Pass',
+        color: 'green',
+        icon: '✅',
+        message: `Exceeds ${standard.name} requirement by ${margin.toFixed(1)}%`,
+        percentage: margin
+      };
+    } else if (predictedStrength >= minRequired) {
+      return {
+        status: 'Warning',
+        color: 'orange',
+        icon: '⚠️',
+        message: `Meets ${standard.name} requirement but low margin (+${margin.toFixed(1)}%)`,
+        percentage: margin
+      };
+    } else {
+      return {
+        status: 'Reject',
+        color: 'red',
+        icon: '❌',
+        message: `Below ${standard.name} requirement by ${Math.abs(margin).toFixed(1)}%`,
+        percentage: margin
+      };
+    }
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -31,6 +79,61 @@ function CementStrengthPrediction() {
       ...prev,
       [name]: value
     }));
+  };
+
+  // Save prediction to MongoDB
+  const savePredictionToDatabase = async (predictionData, inputData) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/cement-predictions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputParameters: {
+            grinding: {
+              initial_min: parseFloat(inputData.initial_min),
+              final_min: parseFloat(inputData.final_min),
+              residue_45um: parseFloat(inputData.residue_45um),
+              fineness: parseFloat(inputData.fineness),
+              loi: parseFloat(inputData.loi)
+            },
+            chemicalComposition: {
+              sio2: parseFloat(inputData.sio2),
+              al2o3: parseFloat(inputData.al2o3),
+              fe2o3: parseFloat(inputData.fe2o3),
+              cao: parseFloat(inputData.cao),
+              mgo: parseFloat(inputData.mgo),
+              so3: parseFloat(inputData.so3),
+              k2o: parseFloat(inputData.k2o),
+              na2o: parseFloat(inputData.na2o),
+              cl: parseFloat(inputData.cl)
+            }
+          },
+          predictions: {
+            strength_1d: predictionData.predictions.strength_1d,
+            strength_2d: predictionData.predictions.strength_2d,
+            strength_7d: predictionData.predictions.strength_7d,
+            strength_28d: predictionData.predictions.strength_28d,
+            strength_56d: predictionData.predictions.strength_56d
+          },
+          modelInfo: {
+            modelUsed: predictionData.predictions.model_used || "Ensemble (XGBoost + LightGBM)",
+            confidence: predictionData.predictions.confidence || "High",
+            engineeredFeaturesCount: predictionData.engineered_features_count || 0
+          }
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Prediction saved to database:', result.data._id);
+        return result.data._id;
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to save prediction to database:', error.message);
+      // Don't throw error - saving to DB is optional, prediction still works
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -62,6 +165,9 @@ function CementStrengthPrediction() {
       const data = await response.json();
       setPrediction(data);
       setShowSuccess(true);
+      
+      // Save to MongoDB database
+      await savePredictionToDatabase(data, formData);
       
       // Scroll to results
       setTimeout(() => {
@@ -125,6 +231,14 @@ function CementStrengthPrediction() {
             Predict cement compressive strength at 1D, 2D, 7D, 28D, and 56D using state-of-the-art machine learning algorithms
           </p>
           
+          <button 
+            onClick={() => onNavigate && onNavigate('cement-strength-history')}
+            className="btn-view-history"
+            type="button"
+          >
+            <History size={20} /> View Prediction History
+          </button>
+          
         </div>
       </div>
 
@@ -142,6 +256,31 @@ function CementStrengthPrediction() {
             </div>
             
             <form onSubmit={handleSubmit}>
+              {/* Cement Grade Selection */}
+              <div className="form-section-group">
+                <div className="section-header">
+                  <h3><span className="section-icon"><Target size={20} /></span> Quality Standards</h3>
+                  <p className="section-description">Select cement grade for automatic quality evaluation</p>
+                </div>
+                <div className="grade-selector">
+                  {Object.keys(gradeStandards).map((grade) => (
+                    <label key={grade} className={`grade-option ${cementGrade === grade ? 'selected' : ''}`}>
+                      <input
+                        type="radio"
+                        name="cementGrade"
+                        value={grade}
+                        checked={cementGrade === grade}
+                        onChange={(e) => setCementGrade(e.target.value)}
+                      />
+                      <div className="grade-content">
+                        <span className="grade-name">{gradeStandards[grade].name}</span>
+                        <span className="grade-requirement">28D: ≥{gradeStandards[grade].min28d} MPa</span>
+                      </div>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div className="form-section-group">
                 <div className="section-header">
                   <h3><span className="section-icon"><Timer size={20} /></span> Grinding Parameters</h3>
@@ -391,6 +530,37 @@ function CementStrengthPrediction() {
                 </div>
               </div>
 
+              {/* Overall Quality Assessment */}
+              {(() => {
+                const quality28d = evaluateQuality(prediction.predictions.strength_28d, '28D', cementGrade);
+                return (
+                  <div className={`overall-quality-banner quality-banner-${quality28d.color}`}>
+                    <div className="banner-icon">{quality28d.icon}</div>
+                    <div className="banner-content">
+                      <div className="banner-title">
+                        Quality Status: <strong>{quality28d.status}</strong> ({gradeStandards[cementGrade].name})
+                      </div>
+                      <div className="banner-message">{quality28d.message}</div>
+                      {quality28d.status === 'Reject' && (
+                        <div className="banner-recommendation">
+                          <strong>Recommendation:</strong> Consider increasing fineness or adjusting chemical composition to meet strength requirements.
+                        </div>
+                      )}
+                      {quality28d.status === 'Warning' && (
+                        <div className="banner-recommendation">
+                          <strong>Note:</strong> Strength meets minimum requirements but has low safety margin. Monitor quality closely.
+                        </div>
+                      )}
+                      {quality28d.status === 'Pass' && (
+                        <div className="banner-recommendation">
+                          <strong>Excellent:</strong> Predicted strength significantly exceeds requirements with good safety margin.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })()}
+
               <div className="results-grid">
                 <div className="result-card strength-1d">
                   <div className="result-icon-wrapper">
@@ -476,32 +646,76 @@ function CementStrengthPrediction() {
 
               <div className="strength-progression">
                 <h3><span className="chart-icon"><TrendingUp size={20} /></span> Strength Development Timeline</h3>
-                <div className="progression-chart">
+                <p className="timeline-subtitle">Watch how your cement gains strength over time</p>
+                
+                <div className="timeline-container">
+                  <div className="timeline-line"></div>
                   {[
-                    { day: '1D', value: prediction.predictions.strength_1d, label: '1 Day' },
-                    { day: '2D', value: prediction.predictions.strength_2d, label: '2 Days' },
-                    { day: '7D', value: prediction.predictions.strength_7d, label: '7 Days' },
-                    { day: '28D', value: prediction.predictions.strength_28d, label: '28 Days', highlight: true },
-                    { day: '56D', value: prediction.predictions.strength_56d, label: '56 Days', highlight: true }
+                    { day: '1D', value: prediction.predictions.strength_1d, label: '1 Day', icon: '🌱', color: '#e8f5e9', border: '#66bb6a' },
+                    { day: '2D', value: prediction.predictions.strength_2d, label: '2 Days', icon: '🌿', color: '#e3f2fd', border: '#42a5f5' },
+                    { day: '7D', value: prediction.predictions.strength_7d, label: '7 Days', icon: '💪', color: '#fff3e0', border: '#ffa726' },
+                    { day: '28D', value: prediction.predictions.strength_28d, label: '28 Days', icon: '🏆', color: '#fce4ec', border: '#ec407a', milestone: true },
+                    { day: '56D', value: prediction.predictions.strength_56d, label: '56 Days', icon: '🎯', color: '#f3e5f5', border: '#ab47bc', milestone: true }
                   ].map((item, idx) => {
                     const maxStrength = prediction.predictions.strength_56d;
                     const percentage = (item.value / maxStrength) * 100;
+                    const growth = idx > 0 ? ((item.value - [
+                      prediction.predictions.strength_1d,
+                      prediction.predictions.strength_2d,
+                      prediction.predictions.strength_7d,
+                      prediction.predictions.strength_28d
+                    ][idx - 1]) / [
+                      prediction.predictions.strength_1d,
+                      prediction.predictions.strength_2d,
+                      prediction.predictions.strength_7d,
+                      prediction.predictions.strength_28d
+                    ][idx - 1] * 100).toFixed(0) : 0;
+                    
+                    // Evaluate quality
+                    const quality = evaluateQuality(item.value, item.day, cementGrade);
+                    
                     return (
-                      <div key={idx} className={`progression-item ${item.highlight ? 'highlight' : ''}`}>
-                        <div className="progression-label-group">
-                          <span className="progression-day">{item.day}</span>
-                          <span className="progression-label">{item.label}</span>
+                      <div key={idx} className={`timeline-item ${item.milestone ? 'milestone' : ''}`}>
+                        <div className="timeline-marker" style={{ borderColor: item.border }}>
+                          <span className="timeline-icon">{item.icon}</span>
                         </div>
-                        <div className="progression-bar-wrapper">
-                          <div className="progression-bar">
-                            <div 
-                              className="progression-fill" 
-                              style={{ width: `${percentage}%` }}
-                            >
-                              <span className="progression-value">{item.value.toFixed(1)} MPa</span>
+                        <div className="timeline-content" style={{ backgroundColor: item.color, borderLeftColor: item.border }}>
+                          <div className="timeline-header">
+                            <div className="timeline-day-badge" style={{ backgroundColor: item.border }}>
+                              {item.day}
                             </div>
+                            <span className="timeline-label">{item.label}</span>
                           </div>
-                          <span className="progression-percentage">{percentage.toFixed(0)}%</span>
+                          <div className="strength-value-display">
+                            <span className="strength-number">{item.value.toFixed(1)}</span>
+                            <span className="strength-unit">MPa</span>
+                          </div>
+                          
+                          {/* Quality Status Badge */}
+                          {quality.status !== 'n/a' && (
+                            <div className={`quality-status quality-${quality.color}`}>
+                              <span className="quality-icon">{quality.icon}</span>
+                              <span className="quality-text">{quality.status}</span>
+                            </div>
+                          )}
+                          
+                          <div className="timeline-details">
+                            <div className="detail-item">
+                              <span className="detail-label">Progress:</span>
+                              <span className="detail-value">{percentage.toFixed(0)}% of final</span>
+                            </div>
+                            {idx > 0 && (
+                              <div className="detail-item growth">
+                                <span className="detail-label">Growth:</span>
+                                <span className="detail-value">+{growth}%</span>
+                              </div>
+                            )}
+                            {quality.status !== 'n/a' && (
+                              <div className="detail-item full-width">
+                                <span className="quality-message">{quality.message}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -518,18 +732,19 @@ function CementStrengthPrediction() {
           padding: 0;
           flex: 1;
           margin: 0;
-          background: linear-gradient(135deg, #f4f1f1ff 0%, #f4f1f1ff 100%);
+          background: #f3f4f6;
           min-height: 100vh;
           display: flex;
           flex-direction: column;
         }
 
         .header-section {
-          background: linear-gradient(135deg, #f8d3d3ff 0%, #f8d3d3ff 100%);
-          color: black;
-          padding: 4rem 2rem 3rem;
+          background: linear-gradient(135deg, #f8d3d3ff 0%, #fecaca 100%);
+          color: #1f2937;
+          padding: 2rem 2rem 2rem;
           text-align: center;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+          box-shadow: 0 4px 20px rgba(220, 38, 38, 0.2);
+          border-bottom: 3px solid #dc2626;
         }
 
         .header-content {
@@ -538,9 +753,8 @@ function CementStrengthPrediction() {
         }
 
         .header-icon {
-          font-size: 4rem;
-          margin-bottom: 1rem;
-          animation: bounce 2s infinite;
+          font-size: 2.5rem;
+          margin-bottom: 0.75rem;
         }
 
         @keyframes bounce {
@@ -549,45 +763,73 @@ function CementStrengthPrediction() {
         }
 
         .header-section h1 {
-          font-size: 2.8rem;
-          margin-bottom: 0.8rem;
+          font-size: 2rem;
+          margin-bottom: 0.5rem;
           font-weight: 700;
-          text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
-          letter-spacing: -0.5px;
+          letter-spacing: 0.3px;
         }
 
         .subtitle {
-          font-size: 1.3rem;
-          opacity: 0.95;
-          margin-bottom: 0.8rem;
+          font-size: 0.875rem;
+          opacity: 0.9;
+          margin-bottom: 0.5rem;
           font-weight: 500;
+          letter-spacing: 0.2px;
         }
 
         .description {
-          font-size: 1.05rem;
-          opacity: 0.9;
+          font-size: 0.875rem;
+          opacity: 0.85;
           max-width: 700px;
-          margin: 0 auto 1.5rem;
+          margin: 0 auto 1rem;
           line-height: 1.6;
+          color: #6b7280;
+        }
+
+        .btn-view-history {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.6rem 1.2rem;
+          background: #dc2626;
+          color: white;
+          border: 1px solid #dc2626;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          margin-top: 0.5rem;
+          box-shadow: 0 2px 6px rgba(220, 38, 38, 0.2);
+          letter-spacing: 0.2px;
+        }
+
+        .btn-view-history:hover {
+          background: #ef4444;
+          color: white;
+          transform: translateY(-1px);
+          box-shadow: 0 3px 10px rgba(220, 38, 38, 0.3);
         }
 
         .model-badges {
           display: flex;
-          gap: 1rem;
+          gap: 0.75rem;
           justify-content: center;
           align-items: center;
-          margin-top: 1.5rem;
+          margin-top: 1rem;
         }
 
         .badge {
-          background: rgba(255,255,255,0.25);
+          background: rgba(255,255,255,0.9);
           backdrop-filter: blur(10px);
-          padding: 0.6rem 1.2rem;
-          border-radius: 25px;
-          font-size: 0.9rem;
-          font-weight: 600;
-          border: 1px solid rgba(255,255,255,0.3);
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+          padding: 0.35rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.75rem;
+          font-weight: 500;
+          border: 1px solid rgba(220, 38, 38, 0.2);
+          box-shadow: 0 2px 4px rgba(220, 38, 38, 0.15);
+          letter-spacing: 0.2px;
+          color: #374151;
         }
 
         .content-wrapper {
@@ -604,8 +846,10 @@ function CementStrengthPrediction() {
           background: white;
           border-radius: 16px;
           padding: 2.5rem;
-          box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
           margin-bottom: 2rem;
+          border: 1px solid rgba(220, 38, 38, 0.1);
+          border-top: 3px solid #dc2626;
         }
 
         .card-header {
@@ -614,7 +858,7 @@ function CementStrengthPrediction() {
           align-items: center;
           margin-bottom: 2rem;
           padding-bottom: 1.5rem;
-          border-bottom: 2px solid #f0f0f0;
+          border-bottom: 2px solid rgba(220, 38, 38, 0.2);
         }
 
         .card-title {
@@ -624,35 +868,38 @@ function CementStrengthPrediction() {
         }
 
         .title-icon {
-          font-size: 1.8rem;
+          font-size: 1.5rem;
         }
 
         .card-title h2 {
           margin: 0;
-          color: #2d3748;
-          font-size: 1.8rem;
-          font-weight: 700;
+          color: #1f2937;
+          font-size: 1.375rem;
+          font-weight: 600;
+          letter-spacing: 0.2px;
         }
 
         .btn-load-sample {
-          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          background: #ef4444;
           color: white;
-          padding: 0.85rem 1.8rem;
+          padding: 0.65rem 1.25rem;
           border: none;
-          border-radius: 10px;
-          font-size: 0.95rem;
-          font-weight: 600;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          font-weight: 500;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.2s ease;
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+          box-shadow: 0 2px 6px rgba(239, 68, 68, 0.2);
+          letter-spacing: 0.2px;
         }
 
         .btn-load-sample:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
+          transform: translateY(-1px);
+          box-shadow: 0 3px 10px rgba(239, 68, 68, 0.3);
+          background: #dc2626;
         }
 
         .form-section-group {
@@ -664,29 +911,90 @@ function CementStrengthPrediction() {
         }
 
         .section-header h3 {
-          color: #2d3748;
+          color: #dc2626;
           margin-bottom: 0.5rem;
-          font-size: 1.4rem;
+          font-size: 1.125rem;
           display: flex;
           align-items: center;
           gap: 0.5rem;
-          font-weight: 700;
+          font-weight: 600;
+          letter-spacing: 0.2px;
         }
 
         .section-icon {
-          font-size: 1.5rem;
+          font-size: 1.25rem;
         }
 
         .section-description {
-          color: #718096;
-          font-size: 0.95rem;
+          color: #6b7280;
+          font-size: 0.875rem;
           margin: 0;
+          font-weight: 400;
         }
 
         .form-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
           gap: 1.5rem;
+        }
+
+        .grade-selector {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 1rem;
+          margin-top: 1rem;
+        }
+
+        .grade-option {
+          position: relative;
+          cursor: pointer;
+          display: block;
+        }
+
+        .grade-option input[type="radio"] {
+          position: absolute;
+          opacity: 0;
+        }
+
+        .grade-content {
+          padding: 1.2rem;
+          border: 2px solid rgba(220, 38, 38, 0.2);
+          border-radius: 10px;
+          background: white;
+          transition: all 0.3s ease;
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+          text-align: center;
+        }
+
+        .grade-option:hover .grade-content {
+          border-color: rgba(220, 38, 38, 0.4);
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
+        }
+
+        .grade-option input[type="radio"]:checked + .grade-content {
+          border-color: #dc2626;
+          background: rgba(220, 38, 38, 0.05);
+          box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
+        }
+
+        .grade-name {
+          font-weight: 600;
+          color: #1f2937;
+          font-size: 0.9375rem;
+          letter-spacing: 0.2px;
+        }
+
+        .grade-requirement {
+          font-size: 0.8125rem;
+          color: #6b7280;
+          font-weight: 500;
+        }
+
+        .grade-option input[type="radio"]:checked + .grade-content .grade-name {
+          color: #dc2626;
         }
 
         .form-group {
@@ -696,39 +1004,41 @@ function CementStrengthPrediction() {
 
         .form-group label {
           font-weight: 600;
-          margin-bottom: 0.6rem;
-          color: #4a5568;
-          font-size: 0.95rem;
+          margin-bottom: 0.5rem;
+          color: #374151;
+          font-size: 0.875rem;
           display: flex;
           align-items: center;
           gap: 0.3rem;
+          letter-spacing: 0.2px;
         }
 
         .unit {
           font-weight: 400;
-          color: #a0aec0;
-          font-size: 0.85rem;
+          color: #9ca3af;
+          font-size: 0.8125rem;
         }
 
         .form-group input {
-          padding: 0.85rem 1rem;
-          border: 2px solid #e2e8f0;
-          border-radius: 10px;
-          font-size: 1rem;
-          transition: all 0.3s ease;
-          background: #f7fafc;
+          padding: 0.75rem 0.875rem;
+          border: 1px solid rgba(220, 38, 38, 0.25);
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          transition: all 0.2s ease;
+          background: white;
+          font-weight: 400;
         }
 
         .form-group input:focus {
           outline: none;
-          border-color: #ef4444;
+          border-color: #dc2626;
           background: white;
-          box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+          box-shadow: 0 0 0 4px rgba(220, 38, 38, 0.1);
           transform: translateY(-1px);
         }
 
         .form-group input:hover:not(:focus) {
-          border-color: #cbd5e0;
+          border-color: rgba(220, 38, 38, 0.4);
         }
 
         .button-group {
@@ -739,29 +1049,30 @@ function CementStrengthPrediction() {
         }
 
         .btn-primary, .btn-secondary {
-          padding: 1.1rem 2.5rem;
+          padding: 0.75rem 1.75rem;
           border: none;
-          border-radius: 12px;
-          font-size: 1.05rem;
-          font-weight: 600;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          font-weight: 500;
           cursor: pointer;
-          transition: all 0.3s ease;
+          transition: all 0.2s ease;
           display: flex;
           align-items: center;
-          gap: 0.7rem;
-          min-width: 200px;
+          gap: 0.5rem;
+          min-width: 180px;
           justify-content: center;
+          letter-spacing: 0.2px;
         }
 
         .btn-primary {
-          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          background: #ef4444;
           color: white;
-          box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+          box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
         }
 
         .btn-primary:hover:not(:disabled) {
-          transform: translateY(-3px);
-          box-shadow: 0 6px 20px rgba(239, 68, 68, 0.5);
+          transform: translateY(-1px);
+          box-shadow: 0 3px 12px rgba(239, 68, 68, 0.4);
         }
 
         .btn-primary:disabled {
@@ -771,14 +1082,14 @@ function CementStrengthPrediction() {
         }
 
         .btn-secondary {
-          background: #f7fafc;
-          color: #4a5568;
-          border: 2px solid #e2e8f0;
+          background: white;
+          color: #1f2937;
+          border: 2px solid rgba(220, 38, 38, 0.3);
         }
 
         .btn-secondary:hover:not(:disabled) {
-          background: #edf2f7;
-          border-color: #cbd5e0;
+          background: rgba(220, 38, 38, 0.05);
+          border-color: #dc2626;
         }
 
         .spinner {
@@ -795,8 +1106,8 @@ function CementStrengthPrediction() {
         }
 
         .error-card {
-          background: linear-gradient(135deg, #fff5f5 0%, #fed7d7 100%);
-          border-left: 4px solid #fc8181;
+          background: #fff5f5;
+          border-left: 4px solid #dc2626;
           animation: slideIn 0.3s ease-out;
         }
 
@@ -807,19 +1118,22 @@ function CementStrengthPrediction() {
         }
 
         .error-icon {
-          font-size: 2.5rem;
+          font-size: 2rem;
           flex-shrink: 0;
         }
 
         .error-card h3 {
-          color: #c53030;
+          color: #dc2626;
           margin: 0 0 0.5rem 0;
-          font-size: 1.3rem;
+          font-size: 1.125rem;
+          font-weight: 600;
+          letter-spacing: 0.2px;
         }
 
         .error-card p {
-          color: #742a2a;
+          color: #991b1b;
           margin: 0.3rem 0;
+          font-weight: 500;
         }
 
         .error-hint {
@@ -828,17 +1142,20 @@ function CementStrengthPrediction() {
         }
 
         .success-banner {
-          background: linear-gradient(135deg, #f0fff4 0%, #c6f6d5 100%);
-          color: #22543d;
-          padding: 1.2rem 2rem;
-          border-radius: 12px;
-          margin-bottom: 2rem;
+          background: #f0fff4;
+          color: #166534;
+          padding: 1rem 1.5rem;
+          border-radius: 10px;
+          margin-bottom: 1.5rem;
           display: flex;
           align-items: center;
-          gap: 1rem;
-          font-weight: 600;
-          box-shadow: 0 4px 12px rgba(72, 187, 120, 0.2);
+          gap: 0.75rem;
+          font-weight: 500;
+          font-size: 0.9375rem;
+          box-shadow: 0 2px 6px rgba(34, 197, 94, 0.15);
           animation: slideIn 0.5s ease-out;
+          border: 1px solid #86efac;
+          letter-spacing: 0.2px;
         }
 
         @keyframes slideIn {
@@ -853,7 +1170,7 @@ function CementStrengthPrediction() {
         }
 
         .success-icon {
-          font-size: 1.5rem;
+          font-size: 1.25rem;
         }
 
         .results-card {
@@ -880,41 +1197,114 @@ function CementStrengthPrediction() {
         .badge-text {
           display: flex;
           flex-direction: column;
-          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+          background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
           color: white;
           padding: 0.8rem 1.5rem;
           border-radius: 10px;
-          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
         }
 
         .badge-label {
           font-size: 0.75rem;
           opacity: 0.9;
+          letter-spacing: 0.2px;
+          font-weight: 500;
         }
 
         .badge-value {
-          font-weight: 700;
-          font-size: 0.95rem;
+          font-weight: 600;
+          font-size: 0.9375rem;
         }
 
         .confidence-indicator {
           display: flex;
           flex-direction: column;
           background: #f0fff4;
-          color: #22543d;
+          color: #166534;
           padding: 0.8rem 1.5rem;
           border-radius: 10px;
-          border: 2px solid #c6f6d5;
+          border: 2px solid #86efac;
         }
 
         .confidence-label {
           font-size: 0.75rem;
-          color: #2f855a;
+          color: #16a34a;
+          letter-spacing: 0.2px;
+          font-weight: 500;
         }
 
         .confidence-value {
-          font-weight: 700;
-          font-size: 0.95rem;
+          font-weight: 600;
+          font-size: 0.9375rem;
+        }
+
+        .overall-quality-banner {
+          margin: 1.5rem 0 2rem 0;
+          padding: 1.5rem;
+          border-radius: 12px;
+          display: flex;
+          align-items: flex-start;
+          gap: 1.2rem;
+          border: 2px solid;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .quality-banner-green {
+          background: #e8f5e9;
+          border-color: #66bb6a;
+          color: #1b5e20;
+        }
+
+        .quality-banner-orange {
+          background: #fff3e0;
+          border-color: #ffa726;
+          color: #e65100;
+        }
+
+        .quality-banner-red {
+          background: #ffebee;
+          border-color: #ef5350;
+          color: #b71c1c;
+        }
+
+        .banner-icon {
+          font-size: 2rem;
+          flex-shrink: 0;
+        }
+
+        .banner-content {
+          flex: 1;
+        }
+
+        .banner-title {
+          font-size: 1rem;
+          font-weight: 600;
+          margin-bottom: 0.5rem;
+          letter-spacing: 0.2px;
+        }
+
+        .banner-title strong {
+          letter-spacing: 0.2px;
+          font-weight: 600;
+        }
+
+        .banner-message {
+          font-size: 0.875rem;
+          margin-bottom: 0.75rem;
+          opacity: 0.9;
+        }
+
+        .banner-recommendation {
+          font-size: 0.875rem;
+          padding: 0.75rem;
+          background: rgba(255,255,255,0.7);
+          border-radius: 8px;
+          margin-top: 0.75rem;
+          font-weight: 500;
+        }
+
+        .banner-recommendation strong {
+          font-weight: 600;
         }
 
         .results-grid {
@@ -925,12 +1315,12 @@ function CementStrengthPrediction() {
         }
 
         .result-card {
-          background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%);
+          background: white;
           padding: 2rem;
           border-radius: 14px;
           text-align: center;
           transition: all 0.3s ease;
-          border: 2px solid #e2e8f0;
+          border: 2px solid rgba(220, 38, 38, 0.2);
           position: relative;
           overflow: hidden;
         }
@@ -947,13 +1337,13 @@ function CementStrengthPrediction() {
 
         .result-card:hover {
           transform: translateY(-5px);
-          box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-          border-color: #ef4444;
+          box-shadow: 0 10px 30px rgba(220, 38, 38, 0.2);
+          border-color: #dc2626;
         }
 
         .result-card.highlight {
-          background: linear-gradient(135deg, #fef5e7 0%, #fad7a0 100%);
-          border-color: #f39c12;
+          background: #fef3c7;
+          border-color: #fbbf24;
         }
 
         .result-card.highlight::before {
@@ -962,14 +1352,16 @@ function CementStrengthPrediction() {
 
         .result-badge {
           position: absolute;
-          top: 0.8rem;
-          right: 0.8rem;
-          background: rgba(0,0,0,0.1);
-          padding: 0.3rem 0.8rem;
-          border-radius: 12px;
-          font-size: 0.7rem;
-          font-weight: 600;
-          text-transform: uppercase;
+          top: 0.75rem;
+          right: 0.75rem;
+          background: rgba(220, 38, 38, 0.08);
+          padding: 0.25rem 0.65rem;
+          border-radius: 10px;
+          font-size: 0.6875rem;
+          font-weight: 500;
+          letter-spacing: 0.2px;
+          color: #dc2626;
+          border: 1px solid rgba(220, 38, 38, 0.2);
         }
 
         .result-icon-wrapper {
@@ -977,9 +1369,8 @@ function CementStrengthPrediction() {
         }
 
         .result-icon {
-          font-size: 2.5rem;
+          font-size: 2rem;
           display: inline-block;
-          animation: pulse 2s infinite;
         }
 
         @keyframes pulse {
@@ -993,34 +1384,28 @@ function CementStrengthPrediction() {
 
         .result-label {
           font-weight: 600;
-          color: #4a5568;
-          font-size: 0.95rem;
-          margin-bottom: 0.8rem;
+          color: #4b5563;
+          font-size: 0.875rem;
+          margin-bottom: 0.75rem;
+          letter-spacing: 0.2px;
         }
 
         .result-value {
-          font-size: 2.8rem;
-          font-weight: 800;
-          color: #2d3748;
+          font-size: 2rem;
+          font-weight: 700;
+          color: #dc2626;
           line-height: 1;
           margin-bottom: 0.3rem;
-          background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
         }
 
         .result-card.highlight .result-value {
-          background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-          background-clip: text;
+          color: #d97706;
         }
 
         .result-unit {
-          font-size: 1rem;
-          color: #718096;
-          font-weight: 600;
+          font-size: 0.875rem;
+          color: #9ca3af;
+          font-weight: 500;
         }
 
         .model-info-grid {
@@ -1035,20 +1420,21 @@ function CementStrengthPrediction() {
           align-items: center;
           gap: 1.2rem;
           padding: 1.5rem;
-          background: #f7fafc;
+          background: white;
           border-radius: 12px;
-          border: 2px solid #e2e8f0;
+          border: 2px solid rgba(220, 38, 38, 0.2);
           transition: all 0.3s ease;
         }
 
         .info-card:hover {
-          border-color: #ef4444;
+          border-color: #dc2626;
           background: white;
           transform: translateX(5px);
+          box-shadow: 0 4px 12px rgba(220, 38, 38, 0.15);
         }
 
         .info-icon {
-          font-size: 2.2rem;
+          font-size: 1.75rem;
           flex-shrink: 0;
         }
 
@@ -1057,15 +1443,17 @@ function CementStrengthPrediction() {
         }
 
         .info-label {
-          font-size: 0.85rem;
-          color: #718096;
-          margin-bottom: 0.3rem;
+          font-size: 0.8125rem;
+          color: #6b7280;
+          margin-bottom: 0.25rem;
+          letter-spacing: 0.2px;
+          font-weight: 500;
         }
 
         .info-value {
-          font-weight: 700;
-          color: #2d3748;
-          font-size: 1.1rem;
+          font-weight: 600;
+          color: #1f2937;
+          font-size: 1rem;
         }
 
         .strength-progression {
@@ -1075,122 +1463,238 @@ function CementStrengthPrediction() {
         }
 
         .strength-progression h3 {
-          margin-bottom: 2rem;
-          color: #2d3748;
-          font-size: 1.5rem;
-          font-weight: 700;
+          margin-bottom: 0.5rem;
+          color: #1f2937;
+          font-size: 1.25rem;
+          font-weight: 600;
           display: flex;
           align-items: center;
-          gap: 0.7rem;
+          gap: 0.6rem;
+          letter-spacing: 0.2px;
+        }
+
+        .timeline-subtitle {
+          color: #6b7280;
+          font-size: 0.875rem;
+          margin-bottom: 1.75rem;
+          font-style: italic;
         }
 
         .chart-icon {
-          font-size: 1.7rem;
+          font-size: 1.375rem;
         }
 
-        .progression-chart {
-          display: flex;
-          flex-direction: column;
-          gap: 1.5rem;
-        }
-
-        .progression-item {
-          display: flex;
-          align-items: center;
-          gap: 1.5rem;
-          padding: 1.2rem;
-          background: #f7fafc;
-          border-radius: 12px;
-          transition: all 0.3s ease;
-        }
-
-        .progression-item:hover {
-          background: white;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          transform: translateX(5px);
-        }
-
-        .progression-item.highlight {
-          background: linear-gradient(135deg, #fef5e7 0%, #fad7a0 100%);
-        }
-
-        .progression-label-group {
-          display: flex;
-          flex-direction: column;
-          min-width: 80px;
-        }
-
-        .progression-day {
-          font-weight: 700;
-          font-size: 1.3rem;
-          color: #2d3748;
-        }
-
-        .progression-label {
-          font-size: 0.85rem;
-          color: #718096;
-        }
-
-        .progression-bar-wrapper {
-          flex: 1;
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-
-        .progression-bar {
-          flex: 1;
-          height: 46px;
-          background: #e2e8f0;
-          border-radius: 23px;
-          overflow: hidden;
+        .timeline-container {
           position: relative;
-          box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+          padding-left: 60px;
         }
 
-        .progression-fill {
-          height: 100%;
-          background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
-          display: flex;
-          align-items: center;
-          justify-content: flex-end;
-          padding-right: 1.2rem;
-          transition: width 1s ease-out;
-          min-width: 100px;
-          position: relative;
-        }
-
-        .progression-fill::after {
-          content: '';
+        .timeline-line {
           position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
-          animation: shimmer 2s infinite;
+          left: 30px;
+          top: 40px;
+          bottom: 40px;
+          width: 3px;
+          background: linear-gradient(to bottom, 
+            #66bb6a 0%, 
+            #42a5f5 25%, 
+            #ffa726 50%, 
+            #ec407a 75%, 
+            #ab47bc 100%);
+          border-radius: 2px;
         }
 
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-
-        .progression-value {
-          color: white;
-          font-weight: 700;
-          font-size: 1rem;
-          text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        .timeline-item {
           position: relative;
-          z-index: 1;
+          margin-bottom: 2rem;
+          display: flex;
+          align-items: flex-start;
+          gap: 1.5rem;
         }
 
-        .progression-percentage {
+        .timeline-marker {
+          position: absolute;
+          left: -44px;
+          top: 10px;
+          width: 42px;
+          height: 42px;
+          border-radius: 50%;
+          background: white;
+          border: 4px solid;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+          z-index: 2;
+        }
+
+        .timeline-icon {
+          font-size: 1.125rem;
+        }
+
+        .timeline-item.milestone .timeline-marker {
+          width: 50px;
+          height: 50px;
+          top: 6px;
+          left: -48px;
+          border-width: 5px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+          animation: pulse-milestone 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-milestone {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.08); }
+        }
+
+        .timeline-content {
+          flex: 1;
+          padding: 1.3rem 1.5rem;
+          border-radius: 12px;
+          border-left: 5px solid;
+          box-shadow: 0 2px 8px rgba(220, 38, 38, 0.1);
+          transition: all 0.2s ease;
+        }
+
+        .timeline-content:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 16px rgba(220, 38, 38, 0.15);
+        }
+
+        .timeline-header {
+          display: flex;
+          align-items: center;
+          gap: 0.8rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .timeline-day-badge {
+          color: white;
+          padding: 0.25rem 0.75rem;
+          border-radius: 16px;
+          font-weight: 600;
+          font-size: 0.8125rem;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+          letter-spacing: 0.2px;
+        }
+
+        .timeline-label {
+          font-weight: 600;
+          color: #374151;
+          font-size: 0.9375rem;
+          letter-spacing: 0.2px;
+        }
+
+        .strength-value-display {
+          display: flex;
+          align-items: baseline;
+          gap: 0.4rem;
+          margin-bottom: 0.8rem;
+        }
+
+        .strength-number {
+          font-size: 1.75rem;
           font-weight: 700;
-          color: #4a5568;
+          color: #1f2937;
+          line-height: 1;
+        }
+
+        .strength-unit {
+          font-size: 0.9375rem;
+          font-weight: 500;
+          color: #6b7280;
+        }
+
+        .quality-status {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.5rem 1rem;
+          border-radius: 16px;
+          font-weight: 600;
+          font-size: 0.8125rem;
+          margin-top: 0.75rem;
+          border: 1px solid;
+          letter-spacing: 0.2px;
+        }
+
+        .quality-green {
+          background: #e8f5e9;
+          color: #2e7d32;
+          border-color: #66bb6a;
+        }
+
+        .quality-orange {
+          background: #fff3e0;
+          color: #f57c00;
+          border-color: #ffa726;
+        }
+
+        .quality-red {
+          background: #ffebee;
+          color: #c62828;
+          border-color: #ef5350;
+        }
+
+        .quality-icon {
           font-size: 1.1rem;
-          min-width: 50px;
-          text-align: right;
+        }
+
+        .quality-text {
+          letter-spacing: 0.2px;
+          font-weight: 600;
+        }
+
+        .quality-message {
+          color: #374151;
+          font-size: 0.85rem;
+          font-style: italic;
+          line-height: 1.4;
+          font-weight: 500;
+        }
+
+        .detail-item.full-width {
+          flex-basis: 100%;
+          background: transparent;
+          padding: 0.6rem 0;
+        }
+
+        .timeline-details {
+          display: flex;
+          gap: 1.5rem;
+          flex-wrap: wrap;
+        }
+
+        .detail-item {
+          display: flex;
+          align-items: center;
+          gap: 0.4rem;
+          padding: 0.4rem 0.8rem;
+          background: rgba(220, 38, 38, 0.05);
+          border-radius: 8px;
+          font-size: 0.85rem;
+          border: 1px solid rgba(220, 38, 38, 0.1);
+        }
+
+        .detail-item.growth {
+          background: rgba(34, 197, 94, 0.1);
+          border-color: rgba(34, 197, 94, 0.2);
+        }
+
+        .detail-label {
+          color: #6b7280;
+          font-weight: 500;
+          letter-spacing: 0.2px;
+          font-size: 0.75rem;
+        }
+
+        .detail-value {
+          color: #1f2937;
+          font-weight: 600;
+        }
+
+        .detail-item.growth .detail-value {
+          color: #16a34a;
         }
 
         @media (max-width: 768px) {
@@ -1218,6 +1722,19 @@ function CementStrengthPrediction() {
             grid-template-columns: 1fr;
           }
 
+          .grade-selector {
+            grid-template-columns: 1fr;
+          }
+
+          .overall-quality-banner {
+            flex-direction: column;
+            text-align: center;
+          }
+
+          .banner-icon {
+            font-size: 2rem;
+          }
+
           .button-group {
             flex-direction: column;
           }
@@ -1231,15 +1748,40 @@ function CementStrengthPrediction() {
             align-items: stretch;
           }
 
-          .progression-item {
-            flex-direction: column;
-            align-items: stretch;
+          .timeline-container {
+            padding-left: 45px;
           }
 
-          .progression-label-group {
-            flex-direction: row;
-            justify-content: space-between;
-            align-items: center;
+          .timeline-line {
+            left: 22px;
+          }
+
+          .timeline-marker {
+            left: -37px;
+            width: 36px;
+            height: 36px;
+          }
+
+          .timeline-item.milestone .timeline-marker {
+            width: 42px;
+            height: 42px;
+            left: -40px;
+          }
+
+          .timeline-icon {
+            font-size: 1.2rem;
+          }
+
+          .timeline-content {
+            padding: 1rem 1.2rem;
+          }
+
+          .strength-number {
+            font-size: 1.8rem;
+          }
+
+          .timeline-details {
+            gap: 0.8rem;
           }
         }
       `}</style>
