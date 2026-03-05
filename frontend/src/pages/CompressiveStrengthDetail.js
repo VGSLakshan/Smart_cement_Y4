@@ -1,6 +1,17 @@
-﻿import { useState, useRef } from "react";
+﻿import { useState, useRef, useEffect } from "react";
 import ViewHistory from "./ViewHistory";
-import { Camera, Upload, Calendar, RotateCw, X } from "lucide-react";
+import {
+  Camera,
+  Upload,
+  Calendar,
+  RotateCw,
+  X,
+  Zap,
+  Loader,
+} from "lucide-react";
+import io from "socket.io-client";
+
+const BACKEND_URL = "http://localhost:5000";
 
 export default function CompressiveStrengthDetail({ onBack }) {
   const [showCamera, setShowCamera] = useState(false);
@@ -11,13 +22,155 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const [selectedDate, setSelectedDate] = useState("");
   const [showHistory, setShowHistory] = useState(false);
 
-  // Sensor data
-  const [sensorData] = useState([
-    { name: "Set 1", values: [60, 60, 60, 60] },
-    { name: "Set 2", values: [49.98, 50.05, 50.1, 49.95] },
-    { name: "Set 3", values: [70.2, 70.18, 70.13, 70.22] },
-    { name: "Set 4", values: [70.03, 69.99, 70.07, 70.01] },
+  // Real-time sensor data from MQTT
+  const [sensorData, setSensorData] = useState([
+    { name: "Set 1", values: [0, 0, 0, 0], received: false },
+    { name: "Set 2", values: [0, 0, 0, 0], received: false },
+    { name: "Set 3", values: [0, 0, 0, 0], received: false },
+    { name: "Set 4", values: [0, 0, 0, 0], received: false },
   ]);
+
+  const [testStatus, setTestStatus] = useState("IDLE"); // IDLE, READY, TEST_STARTED, TEST_COMPLETED
+  const [isTestRunning, setIsTestRunning] = useState(false);
+  const [socket, setSocket] = useState(null);
+
+  // Socket.IO connection
+  useEffect(() => {
+    const newSocket = io(BACKEND_URL);
+    setSocket(newSocket);
+
+    newSocket.on("connect", () => {
+      console.log("✅ Connected to backend Socket.IO");
+    });
+
+    newSocket.on("initialData", (data) => {
+      console.log("📦 Initial sensor data:", data);
+      updateSensorDataFromMQTT(data);
+    });
+
+    newSocket.on("sensorData", ({ side, data }) => {
+      console.log(`📡 Received sensor data for side ${side}:`, data);
+
+      setSensorData((prev) => {
+        const updated = [...prev];
+        updated[side - 1] = {
+          name: `Set ${side}`,
+          values: [data.sensor1, data.sensor2, data.sensor3, data.sensor4],
+          received: true,
+        };
+        return updated;
+      });
+    });
+
+    newSocket.on("testStatus", ({ status }) => {
+      console.log(`📊 Test status update: ${status}`);
+      setTestStatus(status);
+
+      if (status === "TEST_COMPLETED") {
+        setIsTestRunning(false);
+      }
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("❌ Disconnected from backend");
+    });
+
+    return () => {
+      newSocket.close();
+    };
+  }, []);
+
+  const updateSensorDataFromMQTT = (mqttData) => {
+    const sides = ["side1", "side2", "side3", "side4"];
+    setSensorData((prev) => {
+      const updated = [...prev];
+      sides.forEach((sideKey, index) => {
+        if (mqttData[sideKey]) {
+          const side = mqttData[sideKey];
+          updated[index] = {
+            name: `Set ${index + 1}`,
+            values: [side.sensor1, side.sensor2, side.sensor3, side.sensor4],
+            received: true,
+          };
+        }
+      });
+      return updated;
+    });
+
+    if (mqttData.status) {
+      setTestStatus(mqttData.status);
+    }
+  };
+
+  const handleTestNow = async () => {
+    try {
+      setIsTestRunning(true);
+      setTestStatus("TEST_STARTED");
+
+      // Reset sensor data
+      setSensorData([
+        { name: "Set 1", values: [0, 0, 0, 0], received: false },
+        { name: "Set 2", values: [0, 0, 0, 0], received: false },
+        { name: "Set 3", values: [0, 0, 0, 0], received: false },
+        { name: "Set 4", values: [0, 0, 0, 0], received: false },
+      ]);
+
+      const response = await fetch(`${BACKEND_URL}/api/sensor/start-test`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Failed to start test");
+      }
+
+      showNotification(
+        "success",
+        "✓ Test started! ESP32 will begin measurements...",
+      );
+    } catch (error) {
+      console.error("Error starting test:", error);
+      showNotification("error", `Failed to start test: ${error.message}`);
+      setIsTestRunning(false);
+      setTestStatus("IDLE");
+    }
+  };
+
+  // Auto-calculate dimensions when test completes
+  useEffect(() => {
+    if (testStatus === "TEST_COMPLETED") {
+      const allReceived = sensorData.every((set) => set.received);
+      if (allReceived) {
+        calculateDimensions();
+      }
+    }
+  }, [testStatus, sensorData]);
+
+  const calculateDimensions = () => {
+    const set1Avg =
+      sensorData[0].values.reduce((acc, val) => acc + val, 0) /
+      sensorData[0].values.length;
+    const set2Avg =
+      sensorData[1].values.reduce((acc, val) => acc + val, 0) /
+      sensorData[1].values.length;
+    const set3Avg =
+      sensorData[2].values.reduce((acc, val) => acc + val, 0) /
+      sensorData[2].values.length;
+    const set4Avg =
+      sensorData[3].values.reduce((acc, val) => acc + val, 0) /
+      sensorData[3].values.length;
+
+    const avgLength = 270 - (set1Avg + set3Avg);
+    const avgWidth = 270 - (set2Avg + set4Avg);
+
+    handleInputChange("avgLengthMm", avgLength.toFixed(2));
+    handleInputChange("avgWidthMm", avgWidth.toFixed(2));
+    showNotification("success", "✓ Dimensions calculated from sensor data!");
+  };
 
   // Calculate average length from all sensor sets
   const calculateOverallAverage = () => {
@@ -448,9 +601,56 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
             {/* Buttons */}
             <div className="flex flex-wrap justify-center gap-3">
-              <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-2.5 rounded-lg font-semibold text-sm shadow-md">
-                Start New Test
+              {/* Test Now Button */}
+              <button
+                onClick={handleTestNow}
+                disabled={isTestRunning}
+                className={`flex items-center gap-2 px-8 py-3 rounded-lg font-bold text-sm shadow-lg transition ${
+                  isTestRunning
+                    ? "bg-gray-400 cursor-not-allowed"
+                    : "bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white"
+                }`}
+              >
+                {isTestRunning ? (
+                  <>
+                    <Loader className="w-5 h-5 animate-spin" />
+                    Test Running...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="w-5 h-5" />
+                    Test Now
+                  </>
+                )}
               </button>
+
+              {/* Status Indicator */}
+              <div
+                className={`flex items-center gap-2 px-6 py-3 rounded-lg font-semibold text-sm ${
+                  testStatus === "READY"
+                    ? "bg-green-100 text-green-700 border-2 border-green-300"
+                    : testStatus === "TEST_STARTED"
+                      ? "bg-blue-100 text-blue-700 border-2 border-blue-300"
+                      : testStatus === "TEST_COMPLETED"
+                        ? "bg-purple-100 text-purple-700 border-2 border-purple-300"
+                        : "bg-gray-100 text-gray-600 border-2 border-gray-300"
+                }`}
+              >
+                <div
+                  className={`w-2.5 h-2.5 rounded-full ${
+                    testStatus === "READY" || testStatus === "TEST_STARTED"
+                      ? "animate-pulse bg-current"
+                      : "bg-current"
+                  }`}
+                />
+                {testStatus === "READY" && "Device Ready"}
+                {testStatus === "TEST_STARTED" && "Measuring..."}
+                {testStatus === "TEST_COMPLETED" && "Completed"}
+                {testStatus === "IDLE" && "Idle"}
+                {!["IDLE", "READY", "TEST_STARTED", "TEST_COMPLETED"].includes(
+                  testStatus,
+                ) && testStatus}
+              </div>
 
               <button className="bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-200 px-6 py-2.5 rounded-lg font-semibold text-sm">
                 Generate Report
@@ -477,35 +677,16 @@ export default function CompressiveStrengthDetail({ onBack }) {
                   Detailed Sensor Readings
                 </h3>
                 <button
-                  onClick={() => {
-                    // Calculate: avgLength = 270 - (Set1 + Set3), avgWidth = 270 - (Set2 + Set4)
-                    const set1Avg =
-                      sensorData[0].values.reduce((acc, val) => acc + val, 0) /
-                      sensorData[0].values.length;
-                    const set2Avg =
-                      sensorData[1].values.reduce((acc, val) => acc + val, 0) /
-                      sensorData[1].values.length;
-                    const set3Avg =
-                      sensorData[2].values.reduce((acc, val) => acc + val, 0) /
-                      sensorData[2].values.length;
-                    const set4Avg =
-                      sensorData[3].values.reduce((acc, val) => acc + val, 0) /
-                      sensorData[3].values.length;
-
-                    const avgLength = 270 - (set1Avg + set3Avg);
-                    const avgWidth = 270 - (set2Avg + set4Avg);
-
-                    handleInputChange("avgLengthMm", avgLength.toFixed(2));
-                    handleInputChange("avgWidthMm", avgWidth.toFixed(2));
-                    showNotification(
-                      "success",
-                      "Test started! Sensor data collected successfully.",
-                    );
-                  }}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-md transition flex items-center gap-2"
+                  onClick={calculateDimensions}
+                  disabled={!sensorData.every((set) => set.received)}
+                  className={`px-4 py-2 rounded-lg font-semibold text-xs sm:text-sm shadow-md transition flex items-center gap-2 ${
+                    sensorData.every((set) => set.received)
+                      ? "bg-red-600 hover:bg-red-700 text-white"
+                      : "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  }`}
                 >
                   <RotateCw className="w-4 h-4" />
-                  Start Test
+                  Calculate Dimensions
                 </button>
               </div>
               <div className="space-y-3">
@@ -517,14 +698,31 @@ export default function CompressiveStrengthDetail({ onBack }) {
                   return (
                     <div
                       key={index}
-                      className="border border-gray-200 rounded-xl p-3"
+                      className={`border-2 rounded-xl p-3 transition ${
+                        set.received
+                          ? "border-green-300 bg-green-50"
+                          : "border-gray-200 bg-gray-50"
+                      }`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <h4 className="text-xs sm:text-sm font-bold text-gray-800">
-                          {set.name} Sensor Data
-                        </h4>
-                        <div className="bg-green-100 px-2 py-1 rounded-md">
-                          <p className="text-[10px] text-green-700 font-semibold">
+                        <div className="flex items-center gap-2">
+                          <h4 className="text-xs sm:text-sm font-bold text-gray-800">
+                            {set.name} Sensor Data
+                          </h4>
+                          {set.received && (
+                            <span className="text-green-600 text-xs">✓</span>
+                          )}
+                        </div>
+                        <div
+                          className={`px-2 py-1 rounded-md ${
+                            set.received ? "bg-green-200" : "bg-gray-200"
+                          }`}
+                        >
+                          <p
+                            className={`text-[10px] font-semibold ${
+                              set.received ? "text-green-700" : "text-gray-500"
+                            }`}
+                          >
                             Avg: {setAverage} mm
                           </p>
                         </div>
@@ -996,7 +1194,6 @@ export default function CompressiveStrengthDetail({ onBack }) {
               <h2 className="text-sm sm:text-base font-bold text-gray-900">
                 AI Crack Detection
               </h2>
-              
             </div>
 
             {uploadedImage || capturedImage ? (
