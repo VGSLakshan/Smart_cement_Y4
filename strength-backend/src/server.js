@@ -5,6 +5,7 @@ const path = require("path");
 const connectDB = require("./config/db");
 const strengthTestsRouter = require("./routes/strengthTests");
 const errorHandler = require("./middleware/errorHandler");
+const particleRoutes = require("./routes/particleIdentification");
 
 // Initialize Express app
 const app = express();
@@ -22,6 +23,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // API Routes
 app.use("/api/strength-tests", strengthTestsRouter);
+app.use("/api/particle-identification", particleRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {
