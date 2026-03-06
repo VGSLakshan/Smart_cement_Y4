@@ -8,6 +8,7 @@ const connectDB = require("./config/db");
 const strengthTestsRouter = require("./routes/strengthTests");
 const cementPredictionsRouter = require("./routes/cementPredictions");
 const errorHandler = require("./middleware/errorHandler");
+const particleRoutes = require("./routes/particleIdentification");
 const mqttService = require("./services/mqttService");
 
 // Initialize Express app
@@ -38,6 +39,7 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // API Routes
 app.use("/api/strength-tests", strengthTestsRouter);
+app.use("/api/particle-identification", particleRoutes);
 app.use("/api/cement-predictions", cementPredictionsRouter);
 
 // MQTT Control Routes
