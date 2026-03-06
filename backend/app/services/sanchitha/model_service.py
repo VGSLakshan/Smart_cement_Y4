@@ -76,7 +76,7 @@ class CrackSegmentationService:
             "total_pixels": int(total_pixels),
             "crack_pixels": int(crack_pixels),
             "crack_percentage": round(float(crack_percentage), 2),
-            "has_crack": crack_percentage > 0.5  # Consider as crack if >0.5% of pixels
+            "has_crack": crack_percentage > 0.06  # Consider as crack if >0.5% of pixels
         }
     
     def mask_to_base64(self, mask: np.ndarray) -> str:
