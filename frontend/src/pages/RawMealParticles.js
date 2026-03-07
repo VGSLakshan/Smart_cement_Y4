@@ -150,35 +150,63 @@ export default function RawMealParticles({ onNewPrediction }) {
 
       {/* Results */}
       {result && (
-        <div className="mt-6 bg-gray-50 p-4 rounded-lg">
-          <h2 className="text-lg font-semibold mb-3 text-gray-700">
-            Particle Counts
-          </h2>
+  <div className="mt-6 bg-gray-50 p-4 rounded-lg">
 
-          <div className="grid grid-cols-3 gap-4 text-center">
-            <div className="bg-red-100 rounded-lg p-3">
-              <p className="text-sm text-gray-600">Dark Red</p>
-              <p className="text-xl font-bold text-red-700">
-                {result.dark_red}
-              </p>
-            </div>
+    {/* If image is NOT microscopic */}
+    {!result.microscopic && (
+      <div className="text-center">
+        <h2 className="text-lg font-semibold text-red-600 mb-2">
+          Not a Microscopic Image
+        </h2>
+        <p className="text-gray-600">
+          {result.message}
+        </p>
 
-            <div className="bg-orange-100 rounded-lg p-3">
-              <p className="text-sm text-gray-600">Light Red</p>
-              <p className="text-xl font-bold text-orange-600">
-                {result.light_red}
-              </p>
-            </div>
+        <p className="text-sm text-gray-500 mt-2">
+          Confidence: {(result.confidence * 100).toFixed(1)}%
+        </p>
+      </div>
+    )}
 
-            <div className="bg-gray-200 rounded-lg p-3">
-              <p className="text-sm text-gray-600">White</p>
-              <p className="text-xl font-bold text-gray-800">
-                {result.white}
-              </p>
-            </div>
+    {/* If image IS microscopic */}
+    {result.microscopic && (
+      <>
+        <h2 className="text-lg font-semibold mb-3 text-gray-700">
+          Particle Counts
+        </h2>
+
+        <p className="text-sm text-gray-500 mb-3">
+          Confidence: {(result.confidence * 100).toFixed(1)}%
+        </p>
+
+        <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="bg-red-100 rounded-lg p-3">
+            <p className="text-sm text-gray-600">Dark Red</p>
+            <p className="text-xl font-bold text-red-700">
+              {result.dark_red}
+            </p>
+          </div>
+
+          <div className="bg-orange-100 rounded-lg p-3">
+            <p className="text-sm text-gray-600">Light Red</p>
+            <p className="text-xl font-bold text-orange-600">
+              {result.light_red}
+            </p>
+          </div>
+
+          <div className="bg-gray-200 rounded-lg p-3">
+            <p className="text-sm text-gray-600">White</p>
+            <p className="text-xl font-bold text-gray-800">
+              {result.white}
+            </p>
           </div>
         </div>
-      )}
+      </>
+    )}
+
+  </div>
+)}
+
     </div>
   </div>
 );
