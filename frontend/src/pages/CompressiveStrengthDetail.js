@@ -21,7 +21,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedDate, setSelectedDate] = useState("");
   const [showHistory, setShowHistory] = useState(false);
-  
+
   // Auto-capture states
   const [isAutoCapturing, setIsAutoCapturing] = useState(false);
   const [captureCountdown, setCaptureCountdown] = useState(4);
@@ -418,14 +418,14 @@ export default function CompressiveStrengthDetail({ onBack }) {
     setCaptureCountdown(4);
     setAutoCapturedImages([]);
     setCrackResult(null);
-    
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        
+
         // Wait for video to be ready, then start auto-capture
         videoRef.current.onloadedmetadata = () => {
           console.log("✅ Video loaded, starting auto-capture...");
@@ -441,16 +441,16 @@ export default function CompressiveStrengthDetail({ onBack }) {
       setIsAutoCapturing(false);
     }
   };
-  
+
   const startAutoCapture = () => {
     console.log("🚀 Starting auto-capture system...");
-    
+
     // Capture first image immediately
     setTimeout(() => {
       console.log("📸 Taking first capture...");
       autoCaptureImage();
     }, 1000);
-    
+
     // Start countdown timer (updates every 100ms for smooth countdown)
     countdownIntervalRef.current = setInterval(() => {
       setCaptureCountdown((prev) => {
@@ -458,40 +458,40 @@ export default function CompressiveStrengthDetail({ onBack }) {
         return prev - 0.1;
       });
     }, 100);
-    
+
     // Auto-capture every 4 seconds (starting from 4 seconds after first capture)
     autoCaptureIntervalRef.current = setInterval(() => {
       console.log("⏰ Interval triggered - capturing image...");
       autoCaptureImage();
     }, 4000);
   };
-  
+
   const autoCaptureImage = async () => {
     console.log("📷 autoCaptureImage called, checking conditions...");
     console.log("Video ref:", videoRef.current ? "exists" : "null");
     console.log("Canvas ref:", canvasRef.current ? "exists" : "null");
     console.log("Is auto capturing:", isAutoCapturing);
-    
+
     if (videoRef.current && canvasRef.current) {
       const context = canvasRef.current.getContext("2d");
       const width = videoRef.current.videoWidth;
       const height = videoRef.current.videoHeight;
-      
+
       console.log("Video dimensions:", width, "x", height);
-      
+
       if (width > 0 && height > 0) {
         canvasRef.current.width = width;
         canvasRef.current.height = height;
         context.drawImage(videoRef.current, 0, 0);
         const imageData = canvasRef.current.toDataURL("image/jpeg", 0.9);
-        
+
         // Store the captured image
         setAutoCapturedImages((prev) => {
           const newArray = [...prev, imageData];
           console.log(`✅ Image captured! Total count: ${newArray.length}`);
           return newArray;
         });
-        
+
         // Analyze the captured image for cracks
         await analyzeAutoCapturedImage(imageData);
       } else {
@@ -501,7 +501,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
       console.log("❌ Missing refs - cannot capture");
     }
   };
-  
+
   const analyzeAutoCapturedImage = async (imageData) => {
     try {
       const response = await fetch(imageData);
@@ -522,26 +522,26 @@ export default function CompressiveStrengthDetail({ onBack }) {
       if (!apiResponse.ok) throw new Error(`API error: ${apiResponse.status}`);
 
       const result = await apiResponse.json();
-      
+
       console.log("🔍 Crack analysis result:", result);
-      
+
       // Check if crack is detected using the correct property path
       if (result && result.metrics && result.metrics.has_crack) {
         // Stop auto-capture
         stopAutoCapture();
-        
+
         // Set the crack result and captured image
         setCrackResult(result);
         setCapturedImage(imageData);
         setShowCamera(false);
         setIsAutoCapturing(false);
-        
+
         // Show notification
         showNotification(
-          "error", 
-          `🚨 CRACK DETECTED! Coverage: ${result.metrics.crack_percentage}%`
+          "error",
+          `🚨 CRACK DETECTED! Coverage: ${result.metrics.crack_percentage}%`,
         );
-        
+
         console.log("✅ Crack detected, auto-capture stopped");
       } else {
         console.log("✓ No crack detected, continuing auto-capture...");
@@ -551,7 +551,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
       // Continue capturing even if analysis fails
     }
   };
-  
+
   const stopAutoCapture = () => {
     if (autoCaptureIntervalRef.current) {
       clearInterval(autoCaptureIntervalRef.current);
@@ -561,7 +561,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
       clearInterval(countdownIntervalRef.current);
       countdownIntervalRef.current = null;
     }
-    
+
     // Stop camera stream
     if (videoRef.current?.srcObject) {
       videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
@@ -588,7 +588,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
     setShowCamera(false);
     setIsAutoCapturing(false);
   };
-  
+
   // Cleanup on component unmount
   useEffect(() => {
     return () => {
@@ -713,7 +713,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
                   className="w-full aspect-video object-cover"
                 />
                 <canvas ref={canvasRef} className="hidden" />
-                
+
                 {/* Auto-capture status overlay */}
                 {isAutoCapturing && (
                   <div className="absolute top-4 left-4 right-4">
@@ -721,7 +721,9 @@ export default function CompressiveStrengthDetail({ onBack }) {
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-3">
                           <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
-                          <span className="font-bold text-lg">🔴 AUTO-CAPTURE ACTIVE</span>
+                          <span className="font-bold text-lg">
+                            🔴 AUTO-CAPTURE ACTIVE
+                          </span>
                         </div>
                         <div className="text-2xl font-bold bg-white/20 px-4 py-1 rounded-lg">
                           {captureCountdown.toFixed(1)}s
@@ -732,7 +734,9 @@ export default function CompressiveStrengthDetail({ onBack }) {
                           <div className="bg-yellow-400/90 text-gray-900 font-bold px-4 py-2 rounded-md flex items-center gap-2">
                             <span className="text-lg">📸</span>
                             <span>Images Captured:</span>
-                            <span className="text-xl">{autoCapturedImages.length}</span>
+                            <span className="text-xl">
+                              {autoCapturedImages.length}
+                            </span>
                           </div>
                           <span className="bg-white/20 px-3 py-1 rounded-md">
                             🔍 Analyzing...
@@ -740,8 +744,12 @@ export default function CompressiveStrengthDetail({ onBack }) {
                         </div>
                       </div>
                       <div className="mt-3 flex items-center justify-between text-xs opacity-90 border-t border-white/20 pt-2">
-                        <span>✨ Capturing every 4s • Will stop when crack detected</span>
-                        <span className="bg-green-400/20 px-2 py-1 rounded">Check Console for Debug Info</span>
+                        <span>
+                          ✨ Capturing every 4s • Will stop when crack detected
+                        </span>
+                        <span className="bg-green-400/20 px-2 py-1 rounded">
+                          Check Console for Debug Info
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -769,7 +777,9 @@ export default function CompressiveStrengthDetail({ onBack }) {
                   ✨ Auto-Capture Mode Active
                 </p>
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-gray-700 space-y-1">
-                  <p>• 📸 Camera captures image every 4 seconds automatically</p>
+                  <p>
+                    • 📸 Camera captures image every 4 seconds automatically
+                  </p>
                   <p>• 🔍 Each image is analyzed for cracks in real-time</p>
                   <p>• 🛑 Stops automatically when crack is detected</p>
                   <p>• ✅ Shows crack result with coverage percentage</p>
@@ -1450,15 +1460,19 @@ export default function CompressiveStrengthDetail({ onBack }) {
                           </p>
                         </div>
                       </div>
-                      
+
                       {/* Show capture count if auto-captured */}
                       {autoCapturedImages.length > 0 && (
                         <div className="mt-4 bg-blue-100 border border-blue-300 rounded-lg p-3">
                           <div className="flex items-center justify-center gap-2">
                             <span className="text-2xl">📸</span>
                             <div className="text-center">
-                              <p className="text-xs text-blue-700 font-semibold">Total Images Captured</p>
-                              <p className="text-2xl font-bold text-blue-900">{autoCapturedImages.length}</p>
+                              <p className="text-xs text-blue-700 font-semibold">
+                                Total Images Captured
+                              </p>
+                              <p className="text-2xl font-bold text-blue-900">
+                                {autoCapturedImages.length}
+                              </p>
                             </div>
                           </div>
                         </div>
