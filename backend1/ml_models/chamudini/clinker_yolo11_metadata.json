@@ -1,0 +1,19 @@
+{
+  "model_variant": "yolo11m-cls.pt",
+  "num_classes": 5,
+  "class_names": [
+    "C2S",
+    "C3A",
+    "C3S",
+    "C4AF",
+    "cement_clinker_models"
+  ],
+  "img_size": 224,
+  "total_images": 305,
+  "train_images": 245,
+  "val_images": 60,
+  "training_time": "0:59:45.442345",
+  "trained_on": "2026-03-06T14:56:19.739901",
+  "reject_threshold": 0.5,
+  "best_model_path": "/content/yolo11_clinker/exports/clinker_yolo11_best.pt"
+}

@@ -4,6 +4,12 @@ import Navbar from "../components/Navbar";
 export default function Home({ onNavigate }) {
   const cards = [
     {
+      title: "Cement Clincker Image Analyser",
+      description:
+        "Analyze the relationship between material composition and the internal temperature of cement cubes for enhanced performance.",
+      page: "clincker-analyser",
+    },
+    {
       title: "Compressive Strength and Crack Detection",
       description:
         "Review compressive strength test results and utilize AI-powered crack detection for detailed structural integrity analysis.",
