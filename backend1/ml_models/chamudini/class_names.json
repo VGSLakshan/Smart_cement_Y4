@@ -1,0 +1,12 @@
+{
+  "class_names": [
+    "alite",
+    "belite",
+    "celite",
+    "free_lime"
+  ],
+  "num_classes": 4,
+  "model_variant": "yolo11m-cls",
+  "img_size": 224,
+  "reject_threshold": 0.50
+}

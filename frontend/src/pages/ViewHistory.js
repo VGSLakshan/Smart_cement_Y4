@@ -66,6 +66,7 @@ export default function ViewHistory({ onBack }) {
         ? new Date(item.cubeMadeDate).toISOString().split("T")[0]
         : "",
       testingTime: item.testingTime || "",
+      appliedLoadKn: item.appliedLoadKn || "",
       compressiveStrengthMpa: item.compressiveStrengthMpa || "",
       avgAreaMm2: item.avgAreaMm2 || "",
       curingDays: item.curingDays || "",
@@ -305,6 +306,9 @@ Copyright © ${new Date().getFullYear()}
           madeFormattedDate.toLowerCase().includes(searchLower) ||
           // Testing Time
           testingTime.toLowerCase().includes(searchLower) ||
+          // Applied Load
+          (item.appliedLoadKn &&
+            item.appliedLoadKn.toString().includes(searchTerm)) ||
           // Compressive Strength
           (item.compressiveStrengthMpa &&
             item.compressiveStrengthMpa.toString().includes(searchTerm)) ||
@@ -367,7 +371,7 @@ Copyright © ${new Date().getFullYear()}
               <div className="flex-1">
                 <input
                   type="text"
-                  placeholder="Search by cube ID, date, strength, area, curing days, grade, or status..."
+                  placeholder="Search by cube ID, date, applied load, strength, area, curing days, grade, or status..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full border border-gray-300 rounded px-4 py-2 text-sm"
@@ -380,10 +384,15 @@ Copyright © ${new Date().getFullYear()}
                   className="border border-gray-300 rounded px-4 py-2 text-sm"
                 >
                   <option value="all">All Grades</option>
+                  <option value="M10">M10</option>
+                  <option value="M15">M15</option>
                   <option value="M20">M20</option>
                   <option value="M25">M25</option>
                   <option value="M30">M30</option>
                   <option value="M35">M35</option>
+                  <option value="M40">M40</option>
+                  <option value="M45">M45</option>
+                  <option value="M50">M50</option>
                 </select>
               </div>
             </div>
@@ -404,6 +413,9 @@ Copyright © ${new Date().getFullYear()}
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Testing Time
+                      </th>
+                      <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Applied Load (kN)
                       </th>
                       <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Compressive Strength (MPa)
@@ -474,6 +486,13 @@ Copyright © ${new Date().getFullYear()}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                               {item.testingTime || "09:00 AM"}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
+                              <span className="font-semibold text-blue-600">
+                                {item.appliedLoadKn
+                                  ? item.appliedLoadKn.toFixed(2)
+                                  : "N/A"}
+                              </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
                               <span className="font-semibold text-red-600">
@@ -607,7 +626,7 @@ Copyright © ${new Date().getFullYear()}
                     ) : (
                       <tr>
                         <td
-                          colSpan="12"
+                          colSpan="13"
                           className="px-6 py-8 text-center text-sm text-gray-500"
                         >
                           No test results found matching your criteria.
@@ -718,6 +737,24 @@ Copyright © ${new Date().getFullYear()}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Applied Load (kN)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={formData.appliedLoadKn || ""}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          appliedLoadKn: parseFloat(e.target.value),
+                        })
+                      }
+                      className="w-full border border-gray-300 rounded px-3 py-2"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
                       Compressive Strength (MPa)
                     </label>
                     <input
@@ -781,10 +818,15 @@ Copyright © ${new Date().getFullYear()}
                       className="w-full border border-gray-300 rounded px-3 py-2"
                     >
                       <option value="">Select Grade</option>
+                      <option value="M10">M10</option>
+                      <option value="M15">M15</option>
                       <option value="M20">M20</option>
                       <option value="M25">M25</option>
                       <option value="M30">M30</option>
                       <option value="M35">M35</option>
+                      <option value="M40">M40</option>
+                      <option value="M45">M45</option>
+                      <option value="M50">M50</option>
                     </select>
                   </div>
 
@@ -803,10 +845,15 @@ Copyright © ${new Date().getFullYear()}
                       className="w-full border border-gray-300 rounded px-3 py-2"
                     >
                       <option value="">Select Grade</option>
+                      <option value="M10">M10</option>
+                      <option value="M15">M15</option>
                       <option value="M20">M20</option>
                       <option value="M25">M25</option>
                       <option value="M30">M30</option>
                       <option value="M35">M35</option>
+                      <option value="M40">M40</option>
+                      <option value="M45">M45</option>
+                      <option value="M50">M50</option>
                     </select>
                   </div>
 

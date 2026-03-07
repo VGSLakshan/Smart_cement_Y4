@@ -5,6 +5,8 @@ import CompressiveStrengthDetail from "./pages/CompressiveStrengthDetail";
 import CementStrengthDetail from "./pages/CementStrengthDetail";
 import CementStrengthHistory from "./pages/CementStrengthHistory";
 import RawMealPages from "./pages/RawMealPages";
+import ClinkerAnalyser from "./pages/ClinkerAnalyser";
+import ClinkerHistory from "./pages/ClinkerHistory";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
 import ReportSelection from "./pages/ReportSelection";
@@ -32,6 +34,10 @@ export default function App() {
     switch (currentPage) {
       case "home":
         return <Home onNavigate={setCurrentPage} />;
+      case "clincker-analyser":
+        return <ClinkerAnalyser onBack={() => setCurrentPage("home")} onNavigate={setCurrentPage} />;
+      case "clinker-history":
+        return <ClinkerHistory onBack={() => setCurrentPage("clincker-analyser")} />;
       case "compressive-strength":
         return (
           <CompressiveStrengthDetail onBack={() => setCurrentPage("home")} />

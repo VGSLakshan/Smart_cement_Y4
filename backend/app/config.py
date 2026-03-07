@@ -34,6 +34,7 @@ class Settings:
 
     # Kanchana's model paths
     KANCHANA_MODEL_PATH: Path = ML_MODELS_DIR / "kanchana" / "best.pt"
+    KANCHANA_IDENTIFIER_MODEL_PATH: Path = ML_MODELS_DIR / "kanchana" / "best_identifier.pt"
     
     # Image Processing
     IMAGE_SIZE: int = 224

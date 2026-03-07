@@ -7,7 +7,9 @@ const { Server } = require("socket.io");
 const connectDB = require("./config/db");
 const strengthTestsRouter = require("./routes/strengthTests");
 const cementPredictionsRouter = require("./routes/cementPredictions");
+const clinkerPredictionsRouter = require("./routes/clinkerPredictions");
 const errorHandler = require("./middleware/errorHandler");
+const particleRoutes = require("./routes/particleIdentification");
 const mqttService = require("./services/mqttService");
 
 // Initialize Express app
@@ -38,7 +40,9 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // API Routes
 app.use("/api/strength-tests", strengthTestsRouter);
+app.use("/api/particle-identification", particleRoutes);
 app.use("/api/cement-predictions", cementPredictionsRouter);
+app.use("/api/clinker-predictions", clinkerPredictionsRouter);
 
 // MQTT Control Routes
 app.post("/api/sensor/start-test", (req, res) => {
