@@ -6,16 +6,19 @@ import {
   Loader,
   CheckCircle,
   XCircle,
+  History,
 } from "lucide-react";
 
 const BACKEND_URL = "http://127.0.0.1:9000";
+const STRENGTH_BACKEND_URL = "http://localhost:5000";
 
-export default function ClinkerAnalyser({ onBack }) {
+export default function ClinkerAnalyser({ onBack, onNavigate }) {
   const [selectedFile, setSelectedFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [saveStatus, setSaveStatus] = useState("");
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
@@ -39,7 +42,67 @@ export default function ClinkerAnalyser({ onBack }) {
       setSelectedFile(file);
       setResult(null);
       setError("");
+      setSaveStatus("");
       setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  const getPhaseDescription = (phase) => {
+    const descriptions = {
+      C2S: "Belite (Dicalcium Silicate) - Responsible for long-term strength development",
+      C3A: "Tricalcium Aluminate - Fast hydration, affects early strength",
+      C3S: "Alite (Tricalcium Silicate) - Main contributor to early strength",
+      C4AF: "Brownmillerite (Tetracalcium Aluminoferrite) - Flux phase, affects color",
+    };
+    return descriptions[phase] || phase;
+  };
+
+  const saveToDatabase = async (predictionResult, imageFile) => {
+    try {
+      setSaveStatus("Saving to database...");
+
+      const formData = new FormData();
+      formData.append("image", imageFile);
+      formData.append(
+        "sampleName",
+        `Clinker-${new Date().toISOString().split("T")[0]}`
+      );
+      formData.append("predictedClass", predictionResult.predicted_class);
+      formData.append("confidence", predictionResult.confidence);
+      formData.append("rejected", predictionResult.rejected);
+      formData.append("top3Predictions", JSON.stringify(predictionResult.top3));
+      formData.append(
+        "allProbabilities",
+        JSON.stringify(predictionResult.all_probabilities)
+      );
+      formData.append(
+        "phaseDescription",
+        getPhaseDescription(predictionResult.predicted_class)
+      );
+
+      const response = await fetch(
+        `${STRENGTH_BACKEND_URL}/api/clinker-predictions`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to save to database");
+      }
+
+      const data = await response.json();
+      setSaveStatus("✓ Saved to database successfully");
+      
+      // Clear save status after 3 seconds
+      setTimeout(() => setSaveStatus(""), 3000);
+      
+      return data;
+    } catch (err) {
+      console.error("Error saving to database:", err);
+      setSaveStatus("⚠ Failed to save to database");
+      setTimeout(() => setSaveStatus(""), 5000);
     }
   };
 
@@ -87,6 +150,9 @@ export default function ClinkerAnalyser({ onBack }) {
       };
 
       setResult(transformedResult);
+
+      // Save to MongoDB database via strength-backend
+      await saveToDatabase(transformedResult, selectedFile);
     } catch (err) {
       setError(
         err.message ||
@@ -103,16 +169,7 @@ export default function ClinkerAnalyser({ onBack }) {
     setPreview(null);
     setResult(null);
     setError("");
-  };
-
-  const getPhaseDescription = (phase) => {
-    const descriptions = {
-      C2S: "Belite (Dicalcium Silicate) - Responsible for long-term strength development",
-      C3A: "Tricalcium Aluminate - Fast hydration, affects early strength",
-      C3S: "Alite (Tricalcium Silicate) - Main contributor to early strength",
-      C4AF: "Brownmillerite (Tetracalcium Aluminoferrite) - Flux phase, affects color",
-    };
-    return descriptions[phase] || phase;
+    setSaveStatus("");
   };
 
   const getPhaseColor = (phase) => {
@@ -132,12 +189,21 @@ export default function ClinkerAnalyser({ onBack }) {
         <div className="max-w-6xl mx-auto">
           {/* Header */}
           <div className="mb-8">
-            <button
-              onClick={onBack}
-              className="text-gray-600 hover:text-gray-900 mb-4 flex items-center gap-2"
-            >
-              ← Back to Dashboard
-            </button>
+            <div className="flex items-center justify-between mb-4">
+              <button
+                onClick={onBack}
+                className="text-gray-600 hover:text-gray-900 flex items-center gap-2"
+              >
+                ← Back to Dashboard
+              </button>
+              <button
+                onClick={() => onNavigate && onNavigate("clinker-history")}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <History className="h-5 w-5" />
+                View History
+              </button>
+            </div>
             <h1 className="text-3xl font-bold text-gray-900">
               Cement Clinker Image Analyser
             </h1>
@@ -145,6 +211,19 @@ export default function ClinkerAnalyser({ onBack }) {
               Analyze the relationship between material composition and the
               internal temperature of cement cubes for enhanced performance.
             </p>
+            
+            {/* Save Status Indicator */}
+            {saveStatus && (
+              <div className={`mt-3 px-4 py-2 rounded-lg text-sm font-medium ${
+                saveStatus.includes("✓") 
+                  ? "bg-green-50 text-green-800 border border-green-200"
+                  : saveStatus.includes("⚠")
+                  ? "bg-yellow-50 text-yellow-800 border border-yellow-200"
+                  : "bg-blue-50 text-blue-800 border border-blue-200"
+              }`}>
+                {saveStatus}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
