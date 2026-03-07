@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ClipboardList, FileEdit, Timer, Beaker, Rocket, RotateCcw, AlertTriangle, CheckCircle, BarChart3, TrendingUp, Award, Star, Bot, Target, Settings, History } from 'lucide-react';
+import { ClipboardList, FileEdit, Timer, Beaker, Rocket, RotateCcw, AlertTriangle, CheckCircle, BarChart3, TrendingUp, Award, Star, Bot, Target, Settings, History, ArrowLeft } from 'lucide-react';
 import '../App.css';
 
 function CementStrengthPrediction({ onNavigate }) {
@@ -50,7 +50,7 @@ function CementStrengthPrediction({ onNavigate }) {
       return {
         status: 'Pass',
         color: 'green',
-        icon: '✅',
+        icon: '✓',
         message: `Exceeds ${standard.name} requirement by ${margin.toFixed(1)}%`,
         percentage: margin
       };
@@ -58,7 +58,7 @@ function CementStrengthPrediction({ onNavigate }) {
       return {
         status: 'Warning',
         color: 'orange',
-        icon: '⚠️',
+        icon: '!',
         message: `Meets ${standard.name} requirement but low margin (+${margin.toFixed(1)}%)`,
         percentage: margin
       };
@@ -66,7 +66,7 @@ function CementStrengthPrediction({ onNavigate }) {
       return {
         status: 'Reject',
         color: 'red',
-        icon: '❌',
+        icon: '✕',
         message: `Below ${standard.name} requirement by ${Math.abs(margin).toFixed(1)}%`,
         percentage: margin
       };
@@ -646,16 +646,16 @@ function CementStrengthPrediction({ onNavigate }) {
 
               <div className="strength-progression">
                 <h3><span className="chart-icon"><TrendingUp size={20} /></span> Strength Development Timeline</h3>
-                <p className="timeline-subtitle">Watch how your cement gains strength over time</p>
+                <p className="timeline-subtitle">Compressive strength progression over curing period</p>
                 
                 <div className="timeline-container">
                   <div className="timeline-line"></div>
                   {[
-                    { day: '1D', value: prediction.predictions.strength_1d, label: '1 Day', icon: '🌱', color: '#e8f5e9', border: '#66bb6a' },
-                    { day: '2D', value: prediction.predictions.strength_2d, label: '2 Days', icon: '🌿', color: '#e3f2fd', border: '#42a5f5' },
-                    { day: '7D', value: prediction.predictions.strength_7d, label: '7 Days', icon: '💪', color: '#fff3e0', border: '#ffa726' },
-                    { day: '28D', value: prediction.predictions.strength_28d, label: '28 Days', icon: '🏆', color: '#fce4ec', border: '#ec407a', milestone: true },
-                    { day: '56D', value: prediction.predictions.strength_56d, label: '56 Days', icon: '🎯', color: '#f3e5f5', border: '#ab47bc', milestone: true }
+                    { day: '1D', value: prediction.predictions.strength_1d, label: '1 Day', color: '#e8f5e9', border: '#66bb6a' },
+                    { day: '2D', value: prediction.predictions.strength_2d, label: '2 Days', color: '#e3f2fd', border: '#42a5f5' },
+                    { day: '7D', value: prediction.predictions.strength_7d, label: '7 Days', color: '#fff3e0', border: '#ffa726' },
+                    { day: '28D', value: prediction.predictions.strength_28d, label: '28 Days', color: '#fce4ec', border: '#ec407a', milestone: true },
+                    { day: '56D', value: prediction.predictions.strength_56d, label: '56 Days', color: '#f3e5f5', border: '#ab47bc', milestone: true }
                   ].map((item, idx) => {
                     const maxStrength = prediction.predictions.strength_56d;
                     const percentage = (item.value / maxStrength) * 100;
@@ -677,7 +677,7 @@ function CementStrengthPrediction({ onNavigate }) {
                     return (
                       <div key={idx} className={`timeline-item ${item.milestone ? 'milestone' : ''}`}>
                         <div className="timeline-marker" style={{ borderColor: item.border }}>
-                          <span className="timeline-icon">{item.icon}</span>
+                          <span className="timeline-icon">{item.day}</span>
                         </div>
                         <div className="timeline-content" style={{ backgroundColor: item.color, borderLeftColor: item.border }}>
                           <div className="timeline-header">
@@ -725,6 +725,17 @@ function CementStrengthPrediction({ onNavigate }) {
             </div>
           </div>
         )}
+        
+        {/* Back to Dashboard Button */}
+        <div className="back-button-container">
+          <button 
+            className="back-to-dashboard-btn"
+            onClick={() => onNavigate && onNavigate('home')}
+          >
+            <ArrowLeft size={18} />
+            <span>Back to Dashboard</span>
+          </button>
+        </div>
       </div>
 
       <style jsx>{`
@@ -1529,7 +1540,9 @@ function CementStrengthPrediction({ onNavigate }) {
         }
 
         .timeline-icon {
-          font-size: 1.125rem;
+          font-size: 0.75rem;
+          font-weight: 600;
+          color: #1f2937;
         }
 
         .timeline-item.milestone .timeline-marker {
@@ -1539,12 +1552,6 @@ function CementStrengthPrediction({ onNavigate }) {
           left: -48px;
           border-width: 5px;
           box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-          animation: pulse-milestone 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse-milestone {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.08); }
         }
 
         .timeline-content {
@@ -1783,6 +1790,39 @@ function CementStrengthPrediction({ onNavigate }) {
           .timeline-details {
             gap: 0.8rem;
           }
+        }
+
+        .back-button-container {
+          max-width: 1200px;
+          margin: 2rem auto;
+          padding: 0 2rem 2rem;
+          text-align: center;
+        }
+
+        .back-to-dashboard-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.5rem;
+          padding: 0.75rem 1.5rem;
+          background: #dc2626;
+          color: white;
+          border: none;
+          border-radius: 8px;
+          font-size: 0.9375rem;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          box-shadow: 0 2px 4px rgba(220, 38, 38, 0.2);
+        }
+
+        .back-to-dashboard-btn:hover {
+          background: #b91c1c;
+          transform: translateY(-1px);
+          box-shadow: 0 4px 8px rgba(220, 38, 38, 0.3);
+        }
+
+        .back-to-dashboard-btn:active {
+          transform: translateY(0);
         }
       `}</style>
     </div>
