@@ -3,9 +3,14 @@ import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
 import CompressiveStrengthDetail from "./pages/CompressiveStrengthDetail";
 import CementStrengthDetail from "./pages/CementStrengthDetail";
+import CementStrengthHistory from "./pages/CementStrengthHistory";
 import RawMealPages from "./pages/RawMealPages";
+import ClinkerAnalyser from "./pages/ClinkerAnalyser";
+import ClinkerHistory from "./pages/ClinkerHistory";
 import Settings from "./pages/Settings";
 import Login from "./pages/Login";
+import ReportSelection from "./pages/ReportSelection";
+import ReportGeneration from "./pages/ReportGeneration";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState("home");
@@ -29,14 +34,24 @@ export default function App() {
     switch (currentPage) {
       case "home":
         return <Home onNavigate={setCurrentPage} />;
+      case "clincker-analyser":
+        return <ClinkerAnalyser onBack={() => setCurrentPage("home")} onNavigate={setCurrentPage} />;
+      case "clinker-history":
+        return <ClinkerHistory onBack={() => setCurrentPage("clincker-analyser")} />;
       case "compressive-strength":
         return (
           <CompressiveStrengthDetail onBack={() => setCurrentPage("home")} />
         );
       case "cement-strength":
-        return <CementStrengthDetail />;
+        return <CementStrengthDetail onNavigate={setCurrentPage} />;
+      case "cement-strength-history":
+        return <CementStrengthHistory onNavigate={setCurrentPage} />;
       case "raw-meal":
         return <RawMealPages />;
+      case "reports":
+        return <ReportSelection onNavigate={setCurrentPage} />;
+      case "cement-strength-reports":
+        return <ReportGeneration onNavigate={setCurrentPage} />;
       case "settings":
         return <Settings />;
       default:

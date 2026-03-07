@@ -6,7 +6,10 @@ const http = require("http");
 const { Server } = require("socket.io");
 const connectDB = require("./config/db");
 const strengthTestsRouter = require("./routes/strengthTests");
+const cementPredictionsRouter = require("./routes/cementPredictions");
+const clinkerPredictionsRouter = require("./routes/clinkerPredictions");
 const errorHandler = require("./middleware/errorHandler");
+const particleRoutes = require("./routes/particleIdentification");
 const mqttService = require("./services/mqttService");
 
 // Initialize Express app
@@ -37,6 +40,9 @@ app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
 // API Routes
 app.use("/api/strength-tests", strengthTestsRouter);
+app.use("/api/particle-identification", particleRoutes);
+app.use("/api/cement-predictions", cementPredictionsRouter);
+app.use("/api/clinker-predictions", clinkerPredictionsRouter);
 
 // MQTT Control Routes
 app.post("/api/sensor/start-test", (req, res) => {
@@ -98,11 +104,20 @@ app.get("/", (req, res) => {
     version: "1.0.0",
     endpoints: {
       health: "/health",
+      // Compressive Strength Tests
       createTest: "POST /api/strength-tests",
       uploadImage: "POST /api/strength-tests/:id/image",
       listTests: "GET /api/strength-tests",
       getTest: "GET /api/strength-tests/:id",
       deleteTest: "DELETE /api/strength-tests/:id",
+      // Cement Strength Predictions
+      savePrediction: "POST /api/cement-predictions",
+      listPredictions: "GET /api/cement-predictions",
+      getPrediction: "GET /api/cement-predictions/:id",
+      recentPredictions: "GET /api/cement-predictions/recent/:days",
+      statistics: "GET /api/cement-predictions/statistics/summary",
+      searchPredictions: "POST /api/cement-predictions/search",
+      deletePrediction: "DELETE /api/cement-predictions/:id",
     },
   });
 });
