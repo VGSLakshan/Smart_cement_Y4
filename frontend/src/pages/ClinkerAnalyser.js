@@ -1,6 +1,12 @@
 import React, { useState } from "react";
 import Navbar from "../components/Navbar";
-import { Upload, Image as ImageIcon, Loader, CheckCircle, XCircle } from "lucide-react";
+import {
+  Upload,
+  Image as ImageIcon,
+  Loader,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 
 const BACKEND_URL = "http://127.0.0.1:9000";
 
@@ -62,7 +68,7 @@ export default function ClinkerAnalyser({ onBack }) {
       }
 
       const data = await response.json();
-      
+
       // Check if the response indicates an error
       if (!data.success) {
         setError(data.error || "Prediction failed");
@@ -79,10 +85,13 @@ export default function ClinkerAnalyser({ onBack }) {
         top3: data.result.top3,
         filename: data.filename,
       };
-      
+
       setResult(transformedResult);
     } catch (err) {
-      setError(err.message || "Error connecting to backend1. Make sure the server is running on port 8001.");
+      setError(
+        err.message ||
+          "Error connecting to backend1. Make sure the server is running on port 8001.",
+      );
       console.error(err);
     } finally {
       setLoading(false);
@@ -133,8 +142,8 @@ export default function ClinkerAnalyser({ onBack }) {
               Cement Clinker Image Analyser
             </h1>
             <p className="text-gray-600 mt-2">
-              Analyze the relationship between material composition and the internal
-              temperature of cement cubes for enhanced performance.
+              Analyze the relationship between material composition and the
+              internal temperature of cement cubes for enhanced performance.
             </p>
           </div>
 
@@ -151,10 +160,18 @@ export default function ClinkerAnalyser({ onBack }) {
                   <strong>Analysis Types:</strong>
                 </p>
                 <ul className="text-sm text-blue-800 list-disc list-inside space-y-1">
-                  <li><strong>C2S</strong> - Belite (Dicalcium Silicate)</li>
-                  <li><strong>C3A</strong> - Tricalcium Aluminate</li>
-                  <li><strong>C3S</strong> - Alite (Tricalcium Silicate)</li>
-                  <li><strong>C4AF</strong> - Brownmillerite</li>
+                  <li>
+                    <strong>C2S</strong> - Belite (Dicalcium Silicate)
+                  </li>
+                  <li>
+                    <strong>C3A</strong> - Tricalcium Aluminate
+                  </li>
+                  <li>
+                    <strong>C3S</strong> - Alite (Tricalcium Silicate)
+                  </li>
+                  <li>
+                    <strong>C4AF</strong> - Brownmillerite
+                  </li>
                 </ul>
               </div>
 
@@ -200,8 +217,13 @@ export default function ClinkerAnalyser({ onBack }) {
 
                   {/* File Info */}
                   <div className="bg-gray-50 rounded-lg p-3 text-sm text-gray-600">
-                    <p><strong>File:</strong> {selectedFile?.name}</p>
-                    <p><strong>Size:</strong> {(selectedFile?.size / 1024).toFixed(2)} KB</p>
+                    <p>
+                      <strong>File:</strong> {selectedFile?.name}
+                    </p>
+                    <p>
+                      <strong>Size:</strong>{" "}
+                      {(selectedFile?.size / 1024).toFixed(2)} KB
+                    </p>
                   </div>
 
                   {/* Analyze Button */}
@@ -266,14 +288,18 @@ export default function ClinkerAnalyser({ onBack }) {
                           Low Confidence Warning
                         </h3>
                         <p className="text-sm text-yellow-800">
-                          The model's confidence is below the threshold. The prediction may not be reliable. Please verify the image quality and try again with a clearer image.
+                          The model's confidence is below the threshold. The
+                          prediction may not be reliable. Please verify the
+                          image quality and try again with a clearer image.
                         </p>
                       </div>
                     </div>
                   )}
 
                   {/* Main Prediction */}
-                  <div className={`rounded-lg border-2 p-6 ${getPhaseColor(result.predicted_class)}`}>
+                  <div
+                    className={`rounded-lg border-2 p-6 ${getPhaseColor(result.predicted_class)}`}
+                  >
                     <div className="flex items-start gap-3">
                       <CheckCircle className="h-6 w-6 flex-shrink-0 mt-1" />
                       <div>
@@ -284,7 +310,9 @@ export default function ClinkerAnalyser({ onBack }) {
                           {getPhaseDescription(result.predicted_class)}
                         </p>
                         <div className="flex items-center gap-2">
-                          <span className="text-sm font-semibold">Confidence:</span>
+                          <span className="text-sm font-semibold">
+                            Confidence:
+                          </span>
                           <span className="text-lg font-bold">
                             {(result.confidence * 100).toFixed(2)}%
                           </span>
@@ -304,7 +332,9 @@ export default function ClinkerAnalyser({ onBack }) {
                         .map(([phase, probability]) => (
                           <div key={phase} className="space-y-1">
                             <div className="flex justify-between text-sm">
-                              <span className="font-medium text-gray-700">{phase}</span>
+                              <span className="font-medium text-gray-700">
+                                {phase}
+                              </span>
                               <span className="text-gray-600">
                                 {(probability * 100).toFixed(2)}%
                               </span>
@@ -328,8 +358,7 @@ export default function ClinkerAnalyser({ onBack }) {
                   {/* File Info */}
                   <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
                     <p>
-                      <strong>Filename:</strong>{" "}
-                      {result.filename}
+                      <strong>Filename:</strong> {result.filename}
                     </p>
                     {result.top3 && result.top3.length > 0 && (
                       <div className="mt-3">
@@ -337,7 +366,8 @@ export default function ClinkerAnalyser({ onBack }) {
                         <ul className="mt-1 space-y-1">
                           {result.top3.map(([className, conf], idx) => (
                             <li key={idx}>
-                              {idx + 1}. {className} - {(conf * 100).toFixed(2)}%
+                              {idx + 1}. {className} - {(conf * 100).toFixed(2)}
+                              %
                             </li>
                           ))}
                         </ul>

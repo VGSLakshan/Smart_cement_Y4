@@ -5,12 +5,14 @@ This backend runs on **Port 8001** and serves the **Cement Clinker Image Analyse
 ## Quick Start
 
 ### Windows (PowerShell)
+
 ```powershell
 cd backend1
 .\start-backend1.ps1
 ```
 
 ### Manual Start
+
 ```powershell
 cd backend1
 python -m venv .venv
@@ -26,6 +28,7 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 - **Health Check**: `http://127.0.0.1:8001/api/health`
 
 ### Chamudini - Clinker Phase Classification
+
 - `POST /api/chamudini/predict` - Predict clinker phase from image
 - `GET /api/chamudini/health` - Check model health
 - `GET /api/chamudini/classes` - Get supported classes
@@ -34,12 +37,14 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 ## Configuration
 
 The configuration is in `app/config.py`:
+
 - **Port**: 8001 (different from backend which uses 8000)
 - **CORS**: Enabled for localhost:3000 and localhost:3001
 
 ## Components Served
 
 ### Cement Clinker Image Analyser
+
 - **Frontend Component**: `frontend/src/pages/ClinkerAnalyser.js`
 - **API Endpoint**: `/api/chamudini/predict`
 - **Model Type**: YOLO11 Classification
