@@ -262,6 +262,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
+  const testResultRef = useRef(null);
 
   const getTodayDate = () => {
     const today = new Date();
@@ -401,6 +402,14 @@ export default function CompressiveStrengthDetail({ onBack }) {
             "⚠️ Please analyze the crack first to save the mask image",
           );
         }
+
+        // Auto-scroll to Average Test Data section
+        setTimeout(() => {
+          testResultRef.current?.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }, 100);
       } else {
         throw new Error(result.error || "Failed to save test");
       }
@@ -1384,7 +1393,10 @@ export default function CompressiveStrengthDetail({ onBack }) {
             </div>
 
             {/* Average Data Summary */}
-            <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 lg:p-6 border-t-4 border-red-600">
+            <div
+              ref={testResultRef}
+              className="bg-white rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 lg:p-6 border-t-4 border-red-600"
+            >
               <h3 className="text-sm sm:text-base font-bold text-gray-900 mb-3 sm:mb-4">
                 Average Test Data
               </h3>
