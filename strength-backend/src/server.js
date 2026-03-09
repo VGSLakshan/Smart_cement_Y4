@@ -38,6 +38,9 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // Serve static files from uploads directory
 app.use("/uploads", express.static(path.join(__dirname, "../uploads")));
 
+// Serve static files from Python backend uploads directory
+app.use("/uploads", express.static(path.join(__dirname, "../../backend/app/uploads")));
+
 // API Routes
 app.use("/api/strength-tests", strengthTestsRouter);
 app.use("/api/particle-identification", particleRoutes);

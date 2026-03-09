@@ -27,7 +27,7 @@ async def predict(file: UploadFile = File(...)):
     # Prepare data for MongoDB API
     payload = {
         "sampleName": file.filename,
-        "imagePath": str(image_path),
+        "imagePath": file.filename,  # Store only filename, not full path
         "microscopic": result.get("microscopic"),
         "particleCounts": {
             "dark_red": result.get("dark_red", 0),
