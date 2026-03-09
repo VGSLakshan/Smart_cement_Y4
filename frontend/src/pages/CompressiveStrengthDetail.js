@@ -41,6 +41,21 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const [isTestRunning, setIsTestRunning] = useState(false);
   const [socket, setSocket] = useState(null);
 
+  // Terminal logs state
+  const [logs, setLogs] = useState([]);
+  const logsEndRef = useRef(null);
+
+  // Function to add log entry
+  const addLog = (message, type = "info") => {
+    const timestamp = new Date().toLocaleTimeString();
+    setLogs((prev) => [...prev, { message, type, timestamp }]);
+  };
+
+  // Auto-scroll logs to bottom
+  useEffect(() => {
+    logsEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [logs]);
+
   // Socket.IO connection
   useEffect(() => {
     const newSocket = io(BACKEND_URL);
@@ -48,15 +63,21 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
     newSocket.on("connect", () => {
       console.log("✅ Connected to backend Socket.IO");
+      addLog("✅ Connected to measurement system", "success");
     });
 
     newSocket.on("initialData", (data) => {
       console.log("📦 Initial sensor data:", data);
+      addLog("📦 Initial sensor data received", "info");
       updateSensorDataFromMQTT(data);
     });
 
     newSocket.on("sensorData", ({ side, data }) => {
       console.log(`📡 Received sensor data for side ${side}:`, data);
+      addLog(
+        `📡 Side ${side} readings: S1=${data.sensor1}mm, S2=${data.sensor2}mm, S3=${data.sensor3}mm, S4=${data.sensor4}mm`,
+        "data",
+      );
 
       setSensorData((prev) => {
         const updated = [...prev];
@@ -71,15 +92,27 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
     newSocket.on("testStatus", ({ status }) => {
       console.log(`📊 Test status update: ${status}`);
-      setTestStatus(status);
 
-      if (status === "TEST_COMPLETED") {
+      // Add descriptive logs based on status
+      if (status === "READY") {
+        addLog("🟢 Device ready for testing", "success");
+      } else if (status === "TEST_STARTED") {
+        addLog("🔴 Test started - Beginning measurement sequence", "warning");
+        addLog("📐 Ready to get sensor readings...", "info");
+      } else if (status === "TEST_COMPLETED") {
+        addLog("✅ Cube measurement is successful!", "success");
+        addLog("🏠 Returning to home position...", "info");
         setIsTestRunning(false);
+      } else {
+        addLog(`📊 Status: ${status}`, "info");
       }
+
+      setTestStatus(status);
     });
 
     newSocket.on("disconnect", () => {
       console.log("❌ Disconnected from backend");
+      addLog("❌ Disconnected from measurement system", "error");
     });
 
     return () => {
@@ -114,6 +147,10 @@ export default function CompressiveStrengthDetail({ onBack }) {
       setIsTestRunning(true);
       setTestStatus("TEST_STARTED");
 
+      // Clear previous logs and add start message
+      setLogs([]);
+      addLog("🚀 Initiating test sequence...", "warning");
+
       // Reset sensor data
       setSensorData([
         { name: "Set 1", values: [0, 0, 0, 0], received: false },
@@ -121,6 +158,8 @@ export default function CompressiveStrengthDetail({ onBack }) {
         { name: "Set 3", values: [0, 0, 0, 0], received: false },
         { name: "Set 4", values: [0, 0, 0, 0], received: false },
       ]);
+
+      addLog("📤 Sending START_TEST command to IoT device...", "info");
 
       const response = await fetch(`${BACKEND_URL}/api/sensor/start-test`, {
         method: "POST",
@@ -135,12 +174,15 @@ export default function CompressiveStrengthDetail({ onBack }) {
         throw new Error(result.error || "Failed to start test");
       }
 
+      addLog("✅ Test command sent successfully", "success");
+      addLog("📐 Waiting for sensor to initialize...", "info");
       showNotification(
         "success",
         "✓ Test started! ESP32 will begin measurements...",
       );
     } catch (error) {
       console.error("Error starting test:", error);
+      addLog(`❌ Failed to start test: ${error.message}`, "error");
       showNotification("error", `Failed to start test: ${error.message}`);
       setIsTestRunning(false);
       setTestStatus("IDLE");
@@ -158,6 +200,8 @@ export default function CompressiveStrengthDetail({ onBack }) {
   }, [testStatus, sensorData]);
 
   const calculateDimensions = () => {
+    addLog("🧮 Calculating dimensions from sensor readings...", "info");
+
     const set1Avg =
       sensorData[0].values.reduce((acc, val) => acc + val, 0) /
       sensorData[0].values.length;
@@ -173,6 +217,9 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
     const avgLength = 270 - (set1Avg + set3Avg);
     const avgWidth = 270 - (set2Avg + set4Avg);
+
+    addLog(`📏 Average Length: ${avgLength.toFixed(2)} mm`, "success");
+    addLog(`📏 Average Width: ${avgWidth.toFixed(2)} mm`, "success");
 
     handleInputChange("avgLengthMm", avgLength.toFixed(2));
     handleInputChange("avgWidthMm", avgWidth.toFixed(2));
@@ -251,6 +298,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
     );
 
     if (missingFields.length > 0) {
+      addLog(`⚠️ Missing fields: ${missingFields.join(", ")}`, "warning");
       showNotification(
         "error",
         `Please fill in all required fields: ${missingFields.join(", ")}`,
@@ -288,6 +336,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
     }
 
     setIsSaving(true);
+    addLog("💾 Saving test data to database...", "info");
 
     try {
       const requestBody = {
@@ -337,6 +386,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
       if (result.success) {
         setSavedTestId(result.data._id);
         setTestResult(result.data);
+        addLog(`✅ Test saved successfully! ID: ${result.data._id}`, "success");
         showNotification(
           "success",
           `✓ Test saved successfully! ID: ${result.data._id}`,
@@ -356,6 +406,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
       }
     } catch (error) {
       console.error("Error saving test:", error);
+      addLog(`❌ Failed to save test: ${error.message}`, "error");
       showNotification("error", `Failed to save test: ${error.message}`);
     } finally {
       setIsSaving(false);
@@ -368,6 +419,8 @@ export default function CompressiveStrengthDetail({ onBack }) {
       console.log("No crack detection mask available to upload");
       return;
     }
+
+    addLog("🖼️ Uploading crack mask image...", "info");
 
     try {
       // Convert base64 mask to blob
@@ -395,6 +448,8 @@ export default function CompressiveStrengthDetail({ onBack }) {
         const result = await uploadResponse.json();
         console.log("Mask image uploaded:", result.data.crackImageUrl);
 
+        addLog("✅ Crack mask image uploaded successfully", "success");
+
         // Update test result with image information
         setTestResult(result.data);
 
@@ -404,10 +459,12 @@ export default function CompressiveStrengthDetail({ onBack }) {
         );
       } else {
         const errorData = await uploadResponse.json();
+        addLog("❌ Failed to upload crack mask image", "error");
         throw new Error(errorData.error || "Failed to upload mask image");
       }
     } catch (error) {
       console.error("Error uploading mask image:", error);
+      addLog(`❌ Error uploading image: ${error.message}`, "error");
       showNotification("error", `Failed to upload mask: ${error.message}`);
     }
   };
@@ -419,6 +476,8 @@ export default function CompressiveStrengthDetail({ onBack }) {
     setAutoCapturedImages([]);
     setCrackResult(null);
 
+    addLog("📷 Starting camera for auto-capture...", "info");
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
@@ -429,6 +488,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
         // Wait for video to be ready, then start auto-capture
         videoRef.current.onloadedmetadata = () => {
           console.log("✅ Video loaded, starting auto-capture...");
+          addLog("✅ Camera initialized - Auto-capture active", "success");
           // Small delay to ensure video is fully ready
           setTimeout(() => {
             startAutoCapture();
@@ -437,6 +497,7 @@ export default function CompressiveStrengthDetail({ onBack }) {
       }
     } catch (err) {
       console.error("Error accessing camera:", err);
+      addLog(`❌ Camera access failed: ${err.message}`, "error");
       alert("Unable to access camera. Please check permissions.");
       setIsAutoCapturing(false);
     }
@@ -536,6 +597,11 @@ export default function CompressiveStrengthDetail({ onBack }) {
         setShowCamera(false);
         setIsAutoCapturing(false);
 
+        addLog(
+          `🚨 CRACK DETECTED via auto-capture! Coverage: ${result.metrics.crack_percentage}%`,
+          "error",
+        );
+
         // Show notification
         showNotification(
           "error",
@@ -616,12 +682,15 @@ export default function CompressiveStrengthDetail({ onBack }) {
   const analyzeCrack = async () => {
     if (!uploadedImage && !capturedImage) {
       alert("Please upload or capture an image first");
+      addLog("⚠️ No image available for analysis", "warning");
       return;
     }
 
     const imageToAnalyze = uploadedImage || capturedImage;
     setIsAnalyzing(true);
     setCrackResult(null);
+
+    addLog("🔍 Starting crack detection analysis...", "info");
 
     try {
       const response = await fetch(imageToAnalyze);
@@ -643,8 +712,18 @@ export default function CompressiveStrengthDetail({ onBack }) {
 
       const result = await apiResponse.json();
       setCrackResult(result);
+
+      if (result.crack_detected) {
+        addLog(
+          `🔴 Crack detected! Coverage: ${result.crack_percentage?.toFixed(2)}%`,
+          "warning",
+        );
+      } else {
+        addLog("✅ No cracks detected in image", "success");
+      }
     } catch (error) {
       console.error("Error analyzing crack:", error);
+      addLog(`❌ Crack analysis failed: ${error.message}`, "error");
       alert(
         "Failed to analyze crack. Please ensure the backend server is running.",
       );
@@ -875,6 +954,75 @@ export default function CompressiveStrengthDetail({ onBack }) {
                 View History
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Logs Terminal */}
+        <div className="bg-gray-900 rounded-xl sm:rounded-2xl shadow-lg p-4 sm:p-5 lg:p-6 mb-6 sm:mb-8 border-t-4 border-green-500">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-green-500 p-2 rounded-lg">
+              <svg
+                className="w-5 h-5 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-white">System Logs</h3>
+            <span className="ml-auto text-xs text-gray-400">
+              {logs.length} {logs.length === 1 ? "entry" : "entries"}
+            </span>
+            {logs.length > 0 && (
+              <button
+                onClick={() => setLogs([])}
+                className="text-xs px-3 py-1 bg-red-600 hover:bg-red-700 text-white rounded-md transition"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="bg-black rounded-lg p-4 h-64 overflow-y-auto font-mono text-sm">
+            {logs.length === 0 ? (
+              <div className="text-gray-500 text-center py-8">
+                <p className="mb-2">📋 No logs yet</p>
+                <p className="text-xs">
+                  Start a test to see real-time system logs
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-1">
+                {logs.map((log, index) => (
+                  <div
+                    key={index}
+                    className={`flex items-start gap-2 py-1 border-l-2 pl-2 ${
+                      log.type === "success"
+                        ? "border-green-500 text-green-400"
+                        : log.type === "error"
+                          ? "border-red-500 text-red-400"
+                          : log.type === "warning"
+                            ? "border-yellow-500 text-yellow-400"
+                            : log.type === "data"
+                              ? "border-blue-500 text-blue-300"
+                              : "border-gray-500 text-gray-300"
+                    }`}
+                  >
+                    <span className="text-gray-500 text-xs min-w-[70px]">
+                      {log.timestamp}
+                    </span>
+                    <span className="flex-1">{log.message}</span>
+                  </div>
+                ))}
+                <div ref={logsEndRef} />
+              </div>
+            )}
           </div>
         </div>
 
