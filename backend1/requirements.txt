@@ -15,7 +15,7 @@ python-multipart==0.0.6
 # Machine Learning & Image Processing
 # ========================================
 tensorflow>=2.15.0
-numpy>=2.1.0
+numpy>=1.22.0
 pillow>=10.3.0
 opencv-python>=4.10.0
 ultralytics
