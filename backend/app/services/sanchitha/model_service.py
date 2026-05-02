@@ -23,7 +23,37 @@ class CrackSegmentationService:
         """Load the U-Net crack segmentation model"""
         try:
             if self.model_path.exists():
-                self.model = tf.keras.models.load_model(str(self.model_path), compile=False)
+                try:
+                    try:
+                        import keras as keras_lib
+                    except Exception:
+                        keras_lib = None
+
+                    if keras_lib is not None:
+                        self.model = keras_lib.models.load_model(str(self.model_path), compile=False)
+                    else:
+                        self.model = tf.keras.models.load_model(str(self.model_path), compile=False)
+                except Exception as load_err:
+                    # Compatibility fallback for models serialized with InputLayer(batch_shape=...)
+                    if "Unrecognized keyword arguments: ['batch_shape']" not in str(load_err):
+                        raise
+
+                    original_init = (keras_lib or tf.keras).layers.InputLayer.__init__
+
+                    def _patched_input_layer_init(self, *args, **kwargs):
+                        if "batch_shape" in kwargs and "batch_input_shape" not in kwargs:
+                            kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
+                        return original_init(self, *args, **kwargs)
+
+                    (keras_lib or tf.keras).layers.InputLayer.__init__ = _patched_input_layer_init
+                    try:
+                        if keras_lib is not None:
+                            self.model = keras_lib.models.load_model(str(self.model_path), compile=False)
+                        else:
+                            self.model = tf.keras.models.load_model(str(self.model_path), compile=False)
+                    finally:
+                        (keras_lib or tf.keras).layers.InputLayer.__init__ = original_init
+
                 logger.info(f"✅ Sanchitha U-Net model loaded from {self.model_path}")
                 return True
             else:
