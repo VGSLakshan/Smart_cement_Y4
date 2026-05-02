@@ -2,7 +2,6 @@
 Sanchitha - Crack Segmentation API Routes
 """
 from fastapi import APIRouter, File, UploadFile, HTTPException, Query
-from app.services.sanchitha.model_service import crack_service
 from app.models.sanchitha.sanchitha_schemas import (
     CrackSegmentationResponse,
     HealthCheckResponse
@@ -14,13 +13,23 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/sanchitha", tags=["Sanchitha - Crack Segmentation"])
 
 
+def _get_crack_service():
+    try:
+        from app.services.sanchitha.model_service import crack_service
+        return crack_service
+    except Exception as e:
+        logger.warning(f"Sanchitha service unavailable: {e}")
+        return None
+
+
 @router.get("/health", response_model=HealthCheckResponse)
 async def health_check():
     """Check if the crack segmentation service is healthy"""
+    crack_service = _get_crack_service()
     return {
-        "status": "healthy" if crack_service.model is not None else "model_not_loaded",
-        "model_loaded": crack_service.model is not None,
-        "model_path": str(crack_service.model_path)
+        "status": "healthy" if crack_service and crack_service.model is not None else "model_not_loaded",
+        "model_loaded": crack_service is not None and crack_service.model is not None,
+        "model_path": str(crack_service.model_path) if crack_service else "unavailable"
     }
 
 
@@ -40,7 +49,8 @@ async def predict_crack(
     - Crack detection metrics (percentage, pixel count)
     - Detection status
     """
-    if crack_service.model is None:
+    crack_service = _get_crack_service()
+    if crack_service is None or crack_service.model is None:
         raise HTTPException(
             status_code=503,
             detail="Crack segmentation model not loaded. Please check server logs."

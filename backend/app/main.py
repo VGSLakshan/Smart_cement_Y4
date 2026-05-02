@@ -1,7 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import logging
-import tensorflow as tf
 import numpy as np
 from PIL import Image
 import io
@@ -13,9 +12,6 @@ from app.routes.kanchana.predict import router as kanchana_router
 # Import routers
 from app.routes.hirumi.hirumi import router as hirumi_router
 from app.routes.sanchitha.sanchitha import router as sanchitha_router
-
-# Import services
-from app.services.sanchitha.model_service import crack_service
 
 # ----------------------------
 # Logging Setup
@@ -77,8 +73,38 @@ async def load_model():
     # Load Chamudini model
     if MODEL_PATH and os.path.exists(MODEL_PATH):
         try:
-            # The fix: Add compile=False
-            model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+            try:
+                import keras as keras_lib
+            except Exception:
+                keras_lib = None
+
+            import tensorflow as tf
+            try:
+                if keras_lib is not None:
+                    model = keras_lib.models.load_model(MODEL_PATH, compile=False)
+                else:
+                    model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+            except Exception as load_err:
+                # Compatibility fallback for models serialized with InputLayer(batch_shape=...)
+                if "Unrecognized keyword arguments: ['batch_shape']" not in str(load_err):
+                    raise
+
+                original_init = (keras_lib or tf.keras).layers.InputLayer.__init__
+
+                def _patched_input_layer_init(self, *args, **kwargs):
+                    if "batch_shape" in kwargs and "batch_input_shape" not in kwargs:
+                        kwargs["batch_input_shape"] = kwargs.pop("batch_shape")
+                    return original_init(self, *args, **kwargs)
+
+                (keras_lib or tf.keras).layers.InputLayer.__init__ = _patched_input_layer_init
+                try:
+                    if keras_lib is not None:
+                        model = keras_lib.models.load_model(MODEL_PATH, compile=False)
+                    else:
+                        model = tf.keras.models.load_model(MODEL_PATH, compile=False)
+                finally:
+                    (keras_lib or tf.keras).layers.InputLayer.__init__ = original_init
+
             logger.info(f"✅ Chamudini model loaded successfully from {MODEL_PATH}")
         except Exception as e:
             logger.error(f"⚠️ Chamudini model failed to load: {str(e)}")
@@ -87,6 +113,7 @@ async def load_model():
     
     # Load Sanchitha crack segmentation model
     try:
+        from app.services.sanchitha.model_service import crack_service
         crack_service.load_model()
     except Exception as e:
         logger.error(f"⚠️ Sanchitha model failed to load: {str(e)}")
