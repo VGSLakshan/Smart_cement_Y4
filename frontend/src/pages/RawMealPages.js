@@ -14,7 +14,9 @@ export default function RawMealPages() {
   const fetchPredictions = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:5000/api/particle-identification");
+      const response = await fetch(
+        "http://localhost:5000/api/particle-identification",
+      );
       const result = await response.json();
       if (result.success) setPredictions(result.data);
     } catch (error) {
@@ -28,13 +30,36 @@ export default function RawMealPages() {
     fetchPredictions();
   };
 
-  const handleDeletePrediction = (id) => {
-    setPredictions(predictions.filter((p) => p._id !== id));
+  const handleDeletePrediction = async (id) => {
+    if (
+      !window.confirm(
+        "Are you sure you want to delete this prediction? This action cannot be undone.",
+      )
+    )
+      return;
+
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/particle-identification/${id}`,
+        {
+          method: "DELETE",
+        },
+      );
+
+      const result = await response.json();
+      if (!response.ok || !result.success) {
+        throw new Error(result.error || "Failed to delete prediction");
+      }
+
+      setPredictions((prev) => prev.filter((p) => p._id !== id));
+    } catch (err) {
+      console.error("Error deleting prediction:", err);
+      alert("Failed to delete prediction: " + err.message);
+    }
   };
 
   return (
     <div className="min-h-screen bg-gray-100 p-6">
-
       {/* Header */}
       <h1 className="text-3xl font-bold text-gray-800 mb-6">
         Raw Meal Analysis Dashboard
@@ -42,7 +67,6 @@ export default function RawMealPages() {
 
       {/* Tabs */}
       <div className="flex gap-4 mb-8 border-b pb-3">
-
         <button
           onClick={() => setActiveTab("analyze")}
           className={`px-5 py-2 rounded-lg font-medium transition ${
@@ -64,12 +88,10 @@ export default function RawMealPages() {
         >
           Prediction History
         </button>
-
       </div>
 
       {/* Content */}
       <div className="bg-white rounded-2xl shadow p-6">
-
         {activeTab === "analyze" && (
           <RawMealParticles onNewPrediction={handleNewPrediction} />
         )}
@@ -88,7 +110,6 @@ export default function RawMealPages() {
             )}
           </>
         )}
-
       </div>
     </div>
   );

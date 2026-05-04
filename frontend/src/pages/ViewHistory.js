@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export default function ViewHistory({ onBack }) {
   const [historyData, setHistoryData] = useState([]);
@@ -149,97 +151,191 @@ export default function ViewHistory({ onBack }) {
 
   // Handle download report
   const handleDownloadReport = (item) => {
-    // Calculate cube made date
-    const cubeMadeDate = item.cubeMadeDate
-      ? new Date(item.cubeMadeDate)
-      : (() => {
-          const testDate = new Date(item.testDate);
-          const madeDate = new Date(testDate);
-          if (item.curingDays) {
-            madeDate.setDate(madeDate.getDate() - item.curingDays);
+    (async () => {
+      // compute dates
+      const cubeMadeDate = item.cubeMadeDate
+        ? new Date(item.cubeMadeDate)
+        : (() => {
+            const testDate = new Date(item.testDate);
+            const madeDate = new Date(testDate);
+            if (item.curingDays)
+              madeDate.setDate(madeDate.getDate() - item.curingDays);
+            return madeDate;
+          })();
+      const testDate = new Date(item.testDate);
+
+      const doc = new jsPDF({ unit: "pt", format: "a4" });
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const margin = 40;
+
+      // Header banner
+      const headerHeight = 64;
+      doc.setFillColor(20, 90, 160);
+      doc.rect(0, 0, pageWidth, headerHeight, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.text(
+        "Concrete Cube Compressive Strength Test Report",
+        pageWidth / 2,
+        38,
+        { align: "center" },
+      );
+
+      // Subheader line
+      let cursorY = headerHeight + 18;
+
+      // Left: metadata
+      const leftX = margin;
+      const rightX = pageWidth - margin - 200;
+
+      doc.setTextColor(40, 40, 40);
+      doc.setFontSize(11);
+      const metaLines = [
+        { label: "Cube ID", value: item.cubeId || "N/A" },
+        { label: "Test Date", value: testDate.toLocaleString() },
+        { label: "Testing Time", value: item.testingTime || "N/A" },
+        { label: "Cube Made Date", value: cubeMadeDate.toLocaleDateString() },
+        { label: "Curing Days", value: item.curingDays || "N/A" },
+      ];
+
+      metaLines.forEach((m, i) => {
+        doc.setFont(undefined, "bold");
+        doc.text(`${m.label}:`, leftX, cursorY + i * 16);
+        doc.setFont(undefined, "normal");
+        doc.text(String(m.value), leftX + 90, cursorY + i * 16);
+      });
+
+      // Right: key metrics box
+      const boxW = 200;
+      const boxH = 90;
+      doc.setFillColor(245, 248, 255);
+      doc.roundedRect(rightX, cursorY - 12, boxW, boxH, 6, 6, "F");
+      doc.setTextColor(20, 50, 120);
+      doc.setFontSize(12);
+      doc.setFont(undefined, "bold");
+      doc.text("Test Summary", rightX + 12, cursorY + 4);
+      doc.setFontSize(11);
+      doc.setFont(undefined, "normal");
+      doc.text(
+        `Strength: ${item.compressiveStrengthMpa ? item.compressiveStrengthMpa.toFixed(2) + " MPa" : "N/A"}`,
+        rightX + 12,
+        cursorY + 26,
+      );
+      doc.text(
+        `Applied Load: ${item.appliedLoadKn ? item.appliedLoadKn.toFixed(2) + " kN" : "N/A"}`,
+        rightX + 12,
+        cursorY + 44,
+      );
+
+      // Status badge
+      const status = (item.status || "N/A").toString();
+      const badgeX = rightX + 12;
+      const badgeY = cursorY + 56;
+      const badgeW = 80;
+      const badgeH = 16;
+      if (status.toLowerCase() === "passed") {
+        doc.setFillColor(208, 243, 217);
+        doc.setTextColor(0, 100, 40);
+      } else if (status.toLowerCase() === "failed") {
+        doc.setFillColor(255, 230, 230);
+        doc.setTextColor(160, 20, 20);
+      } else {
+        doc.setFillColor(240, 240, 240);
+        doc.setTextColor(80, 80, 80);
+      }
+      doc.roundedRect(badgeX, badgeY - 12, badgeW, badgeH, 4, 4, "F");
+      doc.setFontSize(10);
+      doc.text(status.toUpperCase(), badgeX + 8, badgeY);
+
+      cursorY += 110;
+
+      // Crack image (centered) with border
+      const imageUrl = item.crackImageUrl || item.crackImageLocalPath;
+      if (imageUrl) {
+        try {
+          const resp = await fetch(imageUrl);
+          if (resp.ok) {
+            const blob = await resp.blob();
+            const dataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = reject;
+              reader.readAsDataURL(blob);
+            });
+
+            const img = new Image();
+            img.src = dataUrl;
+            await new Promise((res) => (img.onload = res));
+
+            const maxImgW = pageWidth - margin * 2;
+            const scale = Math.min(1, maxImgW / img.width);
+            const imgW = img.width * scale;
+            const imgH = img.height * scale;
+            const imgX = (pageWidth - imgW) / 2;
+
+            // border
+            doc.setDrawColor(200);
+            doc.rect(imgX - 4, cursorY - 4, imgW + 8, imgH + 8);
+            doc.addImage(
+              dataUrl,
+              imgW && imgH ? "JPEG" : "PNG",
+              imgX,
+              cursorY,
+              imgW,
+              imgH,
+            );
+            cursorY += imgH + 16;
           }
-          return madeDate;
-        })();
+        } catch (e) {
+          console.warn("Could not load crack image for PDF:", e.message);
+        }
+      }
 
-    const testDate = new Date(item.testDate);
+      // Details table using autoTable
+      const tableBody = [
+        [
+          "Average Length (mm)",
+          item.avgLengthMm ? item.avgLengthMm.toFixed(1) : "N/A",
+        ],
+        [
+          "Average Width (mm)",
+          item.avgWidthMm ? item.avgWidthMm.toFixed(1) : "N/A",
+        ],
+        [
+          "Average Area (mm²)",
+          item.avgAreaMm2 ? item.avgAreaMm2.toFixed(1) : "N/A",
+        ],
+        ["Predicted Grade", item.predictGrade || "N/A"],
+        ["Target Grade", item.cubeGrade || "N/A"],
+        [
+          "Remarks",
+          item.crackImageUrl || item.crackImageLocalPath
+            ? "Crack image attached"
+            : "No crack image",
+        ],
+      ];
 
-    // Generate report content
-    const reportContent = `
-╔════════════════════════════════════════════════════════════════════════╗
-║           CONCRETE CUBE COMPRESSIVE STRENGTH TEST REPORT              ║
-╚════════════════════════════════════════════════════════════════════════╝
+      autoTable(doc, {
+        startY: cursorY,
+        theme: "grid",
+        head: [["Field", "Value"]],
+        body: tableBody,
+        styles: { cellPadding: 6, fontSize: 10 },
+        headStyles: { fillColor: [23, 94, 184], textColor: 255 },
+      });
 
-═══════════════════════════════════════════════════════════════════════════
-                            TEST IDENTIFICATION
-═══════════════════════════════════════════════════════════════════════════
-Cube ID:                    ${item.cubeId || "N/A"}
-Test Date:                  ${testDate.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-Testing Time:               ${item.testingTime || "N/A"}
-Cube Made Date:             ${cubeMadeDate.toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
-Curing Period:              ${item.curingDays || "N/A"} days
+      // Footer
+      doc.setFontSize(9);
+      doc.setTextColor(120);
+      doc.text(
+        `Report generated: ${new Date().toLocaleString()}`,
+        margin,
+        doc.internal.pageSize.getHeight() - 40,
+      );
 
-═══════════════════════════════════════════════════════════════════════════
-                         SPECIMEN DIMENSIONS
-═══════════════════════════════════════════════════════════════════════════
-Average Length:             ${item.avgLengthMm ? item.avgLengthMm.toFixed(1) + " mm" : "N/A"}
-Average Width:              ${item.avgWidthMm ? item.avgWidthMm.toFixed(1) + " mm" : "N/A"}
-Average Cross-Sectional Area: ${item.avgAreaMm2 ? item.avgAreaMm2.toFixed(1) + " mm²" : "N/A"}
-
-═══════════════════════════════════════════════════════════════════════════
-                           TEST RESULTS
-═══════════════════════════════════════════════════════════════════════════
-Applied Load:               ${item.appliedLoadKn ? item.appliedLoadKn.toFixed(2) + " kN" : "N/A"}
-Compressive Strength:       ${item.compressiveStrengthMpa ? item.compressiveStrengthMpa.toFixed(2) + " MPa" : "N/A"}
-
-═══════════════════════════════════════════════════════════════════════════
-                          GRADE EVALUATION
-═══════════════════════════════════════════════════════════════════════════
-Target Grade (Cube):        ${item.cubeGrade || "N/A"}
-Predicted Grade:            ${item.predictGrade || "N/A"}
-Test Status:                ${item.status || "N/A"}
-
-═══════════════════════════════════════════════════════════════════════════
-                         PASS/FAIL CRITERIA
-═══════════════════════════════════════════════════════════════════════════
-Status:                     ${item.status === "Passed" ? "✓ PASSED" : "✗ FAILED"}
-${
-  item.status === "Passed"
-    ? "The concrete cube has met the required compressive strength criteria."
-    : "The concrete cube has NOT met the required compressive strength criteria."
-}
-
-═══════════════════════════════════════════════════════════════════════════
-                            REMARKS
-═══════════════════════════════════════════════════════════════════════════
-${item.crackImageUrl || item.crackImageLocalPath ? "Crack image analysis available in database." : "No crack image available."}
-Test ID: ${item._id}
-
-═══════════════════════════════════════════════════════════════════════════
-Report Generated: ${new Date().toLocaleString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-    })}
-═══════════════════════════════════════════════════════════════════════════
-
-Generated by: Smart Cement Quality Testing System
-Copyright © ${new Date().getFullYear()}
-`;
-
-    // Create blob and download
-    const blob = new Blob([reportContent], { type: "text/plain" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Strength_Test_Report_${item.cubeId || item._id}_${testDate.toISOString().split("T")[0]}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
+      const filename = `Strength_Test_Report_${item.cubeId || item._id}_${testDate.toISOString().split("T")[0]}.pdf`;
+      doc.save(filename);
+    })();
   };
 
   // Calculate statistics from history data

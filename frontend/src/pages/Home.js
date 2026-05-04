@@ -22,7 +22,7 @@ export default function Home({ onNavigate }) {
       page: "cement-strength",
     },
     {
-      title: "Cement Raw meals color particles identification",
+      title: "Cement Raw meals Color Particles Identification",
       description:
         "Identify and analyze the color particles in cement raw meals to assess quality and consistency.",
       page: "raw-meal",
